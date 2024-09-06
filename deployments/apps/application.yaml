@@ -1,0 +1,44 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  # name: {{prod}}
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      # repoURL: {{repositoryUrl}}
+      revision: HEAD
+      files:
+      # - path: "{{prod/**/values.yaml}}"
+  template:
+    metadata:
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+        argocd.argoproj.io/sync-wave: "5"
+        argocd.argoproj.io/compare-options: IgnoreExtraneous
+      # name: '{{path.basename}}-prod'
+    spec:
+      # project: prod
+      source:
+        # repoURL: {{repositoryUrl}}
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        # server: {{https://kubernetes.default.svc}}
+        namespace: 'sid-{{app.namespace}}'
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
+        - ApplyOutOfSyncOnly=true
+        - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+        automated:
+          prune: true
+          allowEmpty: true
+          selfHeal: true
