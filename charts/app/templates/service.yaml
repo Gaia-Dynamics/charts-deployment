@@ -1,5 +1,5 @@
 {{- if .Values.service -}}
-{{- if .Values.image.containerPort -}}
+{{ $length := len .Values.service.ports }} {{ if gt $length 0 }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +9,13 @@ metadata:
     app: {{ .Values.name }}
 spec:
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.image.containerPort }}
+    {{- range $value := .Values.service.ports }}
+    - port: {{ $value }}
+      targetPort: {{ $value }}
       protocol: TCP
-      name: http
+      name: {{ printf "port-%s-tcp" $value }}
+    {{- end }}
+
   selector:
     app: {{ .Values.name }}
     env: {{ .Values.environment }}

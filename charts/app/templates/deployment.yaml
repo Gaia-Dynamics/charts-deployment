@@ -39,11 +39,15 @@ spec:
         - {{ . | quote }}
         {{- end }}
         {{- end }}
-        {{- if .Values.image.containerPort }}
+        {{- if .Values.service -}}
+        {{ $length := len .Values.service.ports }} {{ if gt $length 0 }}
         ports:
-          - name: http
-            containerPort: {{ .Values.image.containerPort }}
+          {{- range $value := .Values.service.ports }}
+          - name: {{ printf "port-%s-tcp" $value }}
+            containerPort: {{ $value }}
             protocol: TCP
+          {{- end }}
+        {{- end }}
         {{- end }}
         envFrom:
           {{- if .Values.env }}
@@ -61,7 +65,7 @@ spec:
         livenessProbe:
           httpGet:
             path: {{ .Values.livenessProbe.httpPath | default "/" }}
-            port: http
+            port: {{ .Values.livenessProbe.httpPort | default "80" }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds | default 30 }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds | default 10 }}
           successThreshold: {{ .Values.livenessProbe.successThreshold | default 1 }}
@@ -74,7 +78,7 @@ spec:
         readinessProbe:
           httpGet:
             path: {{ .Values.readinessProbe.httpPath | default "/" }}
-            port: http
+            port: {{ .Values.readinessProbe.httpPort | default "80" }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds | default 30 }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds | default 10 }}
           successThreshold: {{ .Values.readinessProbe.successThreshold | default 1 }}
