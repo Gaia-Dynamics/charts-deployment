@@ -13,6 +13,14 @@ spec:
       targetPort: {{ .Values.image.containerPort }}
       protocol: TCP
       name: http
+
+    {{- range .Values.service.port.additionalPorts }}
+    - port: {{ . }}
+      targetPort: {{ . }}
+      protocol: TCP
+      name: {{ printf "tcp-" . }}
+    {{- end }}
+
   selector:
     app: {{ .Values.name }}
     env: {{ .Values.environment }}
