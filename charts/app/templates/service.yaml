@@ -14,7 +14,7 @@ spec:
       protocol: TCP
       name: http
 
-    {{- range $value := .Values.service.port.additionalPorts }}
+    {{- range $value := .Values.service.additionalPorts }}
     - port: {{ $value }}
       targetPort: {{ $value }}
       protocol: TCP
