@@ -18,6 +18,7 @@ spec:
     - port: {{ $value }}
       targetPort: {{ $value }}
       protocol: TCP
+      name: {{ printf "port-%s-tcp" $value }}
     {{- end }}
 
   selector:
