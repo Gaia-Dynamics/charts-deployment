@@ -14,11 +14,11 @@ spec:
       protocol: TCP
       name: http
 
-    {{- range .Values.service.port.additionalPorts }}
-    - port: {{ . }}
-      targetPort: {{ . }}
+    {{- range $value := .Values.service.port.additionalPorts }}
+    - port: {{ $value }}
+      targetPort: {{ $value }}
       protocol: TCP
-      name: {{ printf "tcp-" . }}
+      name: {{ printf "tcp-" $value }}
     {{- end }}
 
   selector:
