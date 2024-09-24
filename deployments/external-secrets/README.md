@@ -31,7 +31,7 @@ Create a secret containing your credentials
 # @see https://external-secrets.io/latest/introduction/getting-started/#create-a-secret-containing-your-aws-credentials
 echo -n 'KEYID' > ./access-key
 echo -n 'SECRETKEY' > ./secret-access-key
-kubectl create secret generic awssm-secret --from-file=./access-key --from-file=./secret-access-key
+kubectl create secret generic awssm-secret -n external-secrets --from-file=./access-key --from-file=./secret-access-key
 ```
 
 ### Create your Cluster Secret Store

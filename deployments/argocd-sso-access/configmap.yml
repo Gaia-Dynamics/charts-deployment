@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # p, <role/user/group>, <resource>, <action>, <object>, <effect>
+  # g, <user/group>, <role>
+  # g, user@email.com, role:engineers
+  policy.default: role:readonly
+  scopes: '[groups, email]'
+  policy.csv: |
+    p, role:engineers, applications, get, *, allow
+    p, role:engineers, applications, delete, *, allow
+    p, role:engineers, applications, sync, *, allow
+    p, role:engineers, clusters, get, *, allow
+    p, role:engineers, projects, get, *, allow
+    p, role:engineers, applicationsets, get, *, allow
+    p, role:engineers, repositories, get, *, allow
+    p, role:engineers, certificates, get, *, allow
+    p, role:engineers, accounts, get, *, allow
+    p, role:engineers, gpgkeys, get, *, allow
+    p, role:engineers, logs, get, *, allow
+    p, role:engineers, applications, action/batch/CronJob/create-job, *, allow
