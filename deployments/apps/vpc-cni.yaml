@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vpc-cni
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: <your-repo-url>
+    path: charts/vpc-cni
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

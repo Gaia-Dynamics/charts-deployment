@@ -1,0 +1,4 @@
+apiVersion: v2
+name: vpc-cni
+description: AWS VPC CNI configuration
+version: 0.1.0
