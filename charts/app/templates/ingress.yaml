@@ -30,7 +30,7 @@ spec:
           service:
             name: {{ printf "port-%s-tcp" $v.targetPort }}
             port:
-              number: {{ $v.ingressPort }}
+              number: {{ $v.targetPort }}
       {{- end }}
   tls:
   - hosts:
