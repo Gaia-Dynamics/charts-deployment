@@ -1,10 +1,16 @@
 # Helm Chart Documentation for "app"
 
-This documentation provides an overview of how to configure the `values.yaml` file for the Helm chart "app." Below are all the configurable values for the chart templates.
+This documentation provides an overview of how to configure the `values.yaml` file for the Helm chart "app."
+
+Below are all the configurable values for the chart templates.
+
+**Actual Version:** `1.1.4`
 
 ## Values Overview
 
-The `values.yaml` file is where you define the configuration options for the chart. This file includes application-specific configurations, resource settings, environment variables, scaling options, and more.
+The `values.yaml` file is where you define the configuration options for the chart.
+
+This file includes application-specific configurations, resource settings, environment variables, scaling options, and more.
 
 ```yaml
 app:
