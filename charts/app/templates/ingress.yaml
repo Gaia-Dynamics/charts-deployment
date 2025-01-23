@@ -1,3 +1,4 @@
+{{- if .Values.ingress -}}
 {{ $length := len .Values.ingress }} {{ if gt $length 0 }}
 {{- range $v := .Values.ingress }}
 ---
@@ -36,5 +37,6 @@ spec:
   - hosts:
     - {{ $v.domain }}
     secretName: certificate-{{ $v.domain }}
+{{- end }}
 {{- end }}
 {{- end }}
