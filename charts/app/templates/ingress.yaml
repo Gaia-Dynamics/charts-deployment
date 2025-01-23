@@ -29,7 +29,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: {{ printf "port-%s-tcp" $v.targetPort }}
+            name: {{ .Values.name }}
             port:
               number: {{ $v.targetPort }}
       {{- end }}
