@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-**Actual Version:** `1.1.4`
+**Actual Version:** `1.2.0`
 
 ## Values Overview
 
