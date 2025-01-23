@@ -2,6 +2,14 @@ apiVersion: v1
 entries:
   app:
   - apiVersion: v2
+    created: "2025-01-23T17:10:49.241014186Z"
+    description: A Helm chart for Kubernetes
+    digest: 0af1aa2da65fc12fec792f588ca99e5cf51d82154b22ca0cde05b22c51529ffe
+    name: app
+    urls:
+    - https://github.com/Gaia-Dynamics/charts-deployment/releases/download/app-1.1.2/app-1.1.2.tgz
+    version: 1.1.2
+  - apiVersion: v2
     created: "2025-01-22T17:20:35.185360635Z"
     description: A Helm chart for Kubernetes
     digest: 69b994241e2e50a8a79c2a3a71a897c11f77f23fc45a82c672977f0ff8e8c9fa
@@ -121,4 +129,4 @@ entries:
     urls:
     - https://github.com/Gaia-Dynamics/deployment/releases/download/app-1.0.0/app-1.0.0.tgz
     version: 1.0.0
-generated: "2025-01-22T17:20:35.185748351Z"
+generated: "2025-01-23T17:10:49.24116672Z"
