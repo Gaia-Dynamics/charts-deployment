@@ -33,7 +33,7 @@ spec:
             port:
               number: {{ $v.targetPort }}
       {{- end }}
-  {{ - if ($v.ssl) }}
+  {{ - if (default true $v.ssl) }}
   tls:
   - hosts:
     - {{ $v.domain }}
