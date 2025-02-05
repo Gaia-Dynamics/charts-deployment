@@ -93,6 +93,7 @@ app:
   ingress:                                    # Ingress array of object (Optional)
     - domain: example.com                     # Domain
       targetPort: 80                          # Service target port
+      ssl: false                              # enable ssh default: true (Optional)
       paths:                                  # Paths
         - "/"                                 # First path
 
