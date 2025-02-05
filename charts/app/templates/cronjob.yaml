@@ -1,18 +1,18 @@
-{{- if eq "cronjob" .Values.namespace  }}
+{{- if eq "cronjob" $.Values.app.namespace  }}
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Values.name }}
-  namespace: {{ printf "sid-%s" .Values.namespace }}
+  name: {{ $.Values.app.name }}
+  namespace: {{ printf "sid-%s" $.Values.app.namespace }}
   labels:
-    app: {{ .Values.name }}
-    env: {{ .Values.environment }}
+    app: {{ $.Values.app.name }}
+    env: {{ $.Values.app.environment }}
 spec:
-  {{- if .Values.suspended }}
+  {{- if $.Values.app.suspended }}
   suspend: true
   {{- end }}
-  schedule: {{ .Values.schedule | squote }}
+  schedule: {{ $.Values.app.schedule | squote }}
   startingDeadlineSeconds: 30
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -20,45 +20,45 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        app: {{ $.Values.name }}
-        env: {{ $.Values.environment }}
+        app: {{ $.Values.app.name }}
+        env: {{ $.Values.app.environment }}
     spec:
       template:
         metadata:
           labels:
-            app: {{ $.Values.name }}
-            env: {{ $.Values.environment }}
+            app: {{ $.Values.app.name }}
+            env: {{ $.Values.app.environment }}
         spec:
-          serviceAccountName: {{ $.Values.name }}
+          serviceAccountName: {{ $.Values.app.name }}
           restartPolicy: Never
           imagePullSecrets:
             - name: regcred
           containers:
-          - name: {{ $.Values.name }}
-            image: "{{ .Values.image.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
-            imagePullPolicy: {{ .Values.image.pullPolicy }}
-            {{- if .Values.image.command }}
-            command: [{{ .Values.image.command | quote }}]
+          - name: {{ $.Values.app.name }}
+            image: "{{ $.Values.app.image.registry }}/{{ $.Values.app.image.name }}:{{ $.Values.app.image.tag }}"
+            imagePullPolicy: {{ $.Values.app.image.pullPolicy }}
+            {{- if $.Values.app.image.command }}
+            command: [{{ $.Values.app.image.command | quote }}]
             {{- end }}
-            {{- if .Values.image.args }}
+            {{- if $.Values.app.image.args }}
             args:
-            {{- range .Values.image.args }}
+            {{- range $.Values.app.image.args }}
             - {{ . | quote }}
             {{- end }}
             {{- end }}
             envFrom:
-              {{- if .Values.env }}
-              {{- if .Values.env.public }}
+              {{- if $.Values.app.env }}
+              {{- if $.Values.app.env.public }}
               - configMapRef:
-                  name: {{ $.Values.name }}
+                  name: {{ $.Values.app.name }}
               {{- end }}
-              {{- if .Values.env.private }}
+              {{- if $.Values.app.env.private }}
               - secretRef:
-                  name: {{ $.Values.name }}
+                  name: {{ $.Values.app.name }}
               {{- end }}
               {{- end }}
-            {{- if .Values.resources }}
+            {{- if $.Values.app.resources }}
             resources:
-{{ toYaml .Values.resources | indent 14 }}
+{{ toYaml $.Values.app.resources | indent 14 }}
             {{- end }}
 {{- end }}

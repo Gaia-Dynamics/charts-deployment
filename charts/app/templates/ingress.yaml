@@ -1,16 +1,20 @@
-{{- if .Values.ingress -}}
-{{ $length := len .Values.ingress }} {{ if gt $length 0 }}
-{{- range $v := .Values.ingress }}
+{{- if $.Values.app.ingress -}}
+{{ $length := len $.Values.app.ingress }} {{ if gt $length 0 }}
+{{- range $v := $.Values.app.ingress }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   labels:
-    app.kubernetes.io/instance: {{ $v.domain }}-{{ $.Values.environment }}
+    app.kubernetes.io/instance: {{ $v.domain }}-{{ $.Values.app.environment }}
   name: {{ $v.domain }}-{{ $v.targetPort }}
-  namespace: {{ printf "sid-%s" $.Values.namespace }}
+  namespace: {{ printf "sid-%s" $.Values.app.namespace }}
   annotations:
+    {{- if eq false $v.ssl }}
+    # no ssl
+    {{- else }}
     cert-manager.io/cluster-issuer: letsencrypt-issuer
+    {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /
     {{- if $v.buffersize }}
     nginx.ingress.kubernetes.io/client-body-buffer-size: {{ $v.buffersize }}
@@ -29,11 +33,13 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: {{ $.Values.name }}
+            name: {{ $.Values.app.name }}
             port:
               number: {{ $v.targetPort }}
       {{- end }}
-  {{- if ne (default true $v.ssl) false }}
+  {{- if eq false $v.ssl }}
+  # no ssl
+  {{- else }}
   tls:
   - hosts:
     - {{ $v.domain }}
