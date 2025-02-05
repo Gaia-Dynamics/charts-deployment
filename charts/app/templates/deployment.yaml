@@ -1,49 +1,49 @@
-{{- if ne "cronjob" $.Values.app.namespace  }}
+{{- if ne "cronjob" $.Values.namespace  }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $.Values.app.name }}
-  namespace: {{ printf "sid-%s" $.Values.app.namespace }}
+  name: {{ $.Values.name }}
+  namespace: {{ printf "sid-%s" $.Values.namespace }}
   labels:
-    app: {{ $.Values.app.name }}
-    env: {{ $.Values.app.environment }}
+    app: {{ $.Values.name }}
+    env: {{ $.Values.environment }}
 spec:
   revisionHistoryLimit: 3
-  {{- if ($.Values.app.suspended)}}
+  {{- if ($.Values.suspended)}}
   replicas: 0
   {{- end }}
   selector:
     matchLabels:
-      app: {{ $.Values.app.name }}
-      env: {{ $.Values.app.environment }}
+      app: {{ $.Values.name }}
+      env: {{ $.Values.environment }}
   template:
     metadata:
       labels:
-        app: {{ $.Values.app.name }}
-        env: {{ $.Values.app.environment }}
+        app: {{ $.Values.name }}
+        env: {{ $.Values.environment }}
     spec:
-      serviceAccountName: {{ $.Values.app.name }}
+      serviceAccountName: {{ $.Values.name }}
       terminationGracePeriodSeconds: 80
       imagePullSecrets:
         - name: regcred
-      {{- if $.Values.app.image }}
+      {{- if $.Values.image }}
       containers:
-      - name: {{ $.Values.app.name }}
-        image: "{{ $.Values.app.image.registry }}/{{ $.Values.app.image.name }}:{{ $.Values.app.image.tag }}"
-        imagePullPolicy: {{ $.Values.app.image.pullPolicy }}
-        {{- if $.Values.app.image.command }}
-        command: [{{ $.Values.app.image.command | quote }}]
+      - name: {{ $.Values.name }}
+        image: "{{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag }}"
+        imagePullPolicy: {{ $.Values.image.pullPolicy }}
+        {{- if $.Values.image.command }}
+        command: [{{ $.Values.image.command | quote }}]
         {{- end }}
-        {{- if $.Values.app.image.args }}
+        {{- if $.Values.image.args }}
         args:
-        {{- range $.Values.app.image.args }}
+        {{- range $.Values.image.args }}
         - {{ . | quote }}
         {{- end }}
         {{- end }}
-        {{- if $.Values.app.service -}}
-        {{ $length := len $.Values.app.service.ports }} {{ if gt $length 0 }}
+        {{- if $.Values.service -}}
+        {{ $length := len $.Values.service.ports }} {{ if gt $length 0 }}
         ports:
-          {{- range $value := $.Values.app.service.ports }}
+          {{- range $value := $.Values.service.ports }}
           - name: {{ printf "port-%s-tcp" $value }}
             containerPort: {{ $value }}
             protocol: TCP
@@ -51,45 +51,45 @@ spec:
         {{- end }}
         {{- end }}
         envFrom:
-          {{- if $.Values.app.env }}
-          {{- if $.Values.app.env.public }}
+          {{- if $.Values.env }}
+          {{- if $.Values.env.public }}
           - configMapRef:
-              name: {{ $.Values.app.name }}
+              name: {{ $.Values.name }}
           {{- end }}
-          {{- if $.Values.app.env.private }}
+          {{- if $.Values.env.private }}
           - secretRef:
-              name: {{ $.Values.app.name }}
+              name: {{ $.Values.name }}
           {{- end }}
           {{- end }}
-        {{- if $.Values.app.livenessProbe }}
-        {{- if $.Values.app.livenessProbe.enabled }}
+        {{- if $.Values.livenessProbe }}
+        {{- if $.Values.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
-            path: {{ $.Values.app.livenessProbe.httpPath | default "/" }}
-            port: {{ $.Values.app.livenessProbe.httpPort | default "80" }}
-          initialDelaySeconds: {{ $.Values.app.livenessProbe.initialDelaySeconds | default 30 }}
-          periodSeconds: {{ $.Values.app.livenessProbe.periodSeconds | default 10 }}
-          successThreshold: {{ $.Values.app.livenessProbe.successThreshold | default 1 }}
-          timeoutSeconds: {{ $.Values.app.livenessProbe.timeoutSeconds | default 3 }}
-          failureThreshold: {{ $.Values.app.livenessProbe.failureThreshold | default 3 }}
+            path: {{ $.Values.livenessProbe.httpPath | default "/" }}
+            port: {{ $.Values.livenessProbe.httpPort | default "80" }}
+          initialDelaySeconds: {{ $.Values.livenessProbe.initialDelaySeconds | default 30 }}
+          periodSeconds: {{ $.Values.livenessProbe.periodSeconds | default 10 }}
+          successThreshold: {{ $.Values.livenessProbe.successThreshold | default 1 }}
+          timeoutSeconds: {{ $.Values.livenessProbe.timeoutSeconds | default 3 }}
+          failureThreshold: {{ $.Values.livenessProbe.failureThreshold | default 3 }}
         {{- end }}
         {{- end }}
-        {{- if $.Values.app.readinessProbe }}
-        {{- if $.Values.app.readinessProbe.enabled }}
+        {{- if $.Values.readinessProbe }}
+        {{- if $.Values.readinessProbe.enabled }}
         readinessProbe:
           httpGet:
-            path: {{ $.Values.app.readinessProbe.httpPath | default "/" }}
-            port: {{ $.Values.app.readinessProbe.httpPort | default "80" }}
-          initialDelaySeconds: {{ $.Values.app.readinessProbe.initialDelaySeconds | default 30 }}
-          periodSeconds: {{ $.Values.app.readinessProbe.periodSeconds | default 10 }}
-          successThreshold: {{ $.Values.app.readinessProbe.successThreshold | default 1 }}
-          timeoutSeconds: {{ $.Values.app.readinessProbe.timeoutSeconds | default 3 }}
-          failureThreshold: {{ $.Values.app.readinessProbe.failureThreshold | default 3 }}
+            path: {{ $.Values.readinessProbe.httpPath | default "/" }}
+            port: {{ $.Values.readinessProbe.httpPort | default "80" }}
+          initialDelaySeconds: {{ $.Values.readinessProbe.initialDelaySeconds | default 30 }}
+          periodSeconds: {{ $.Values.readinessProbe.periodSeconds | default 10 }}
+          successThreshold: {{ $.Values.readinessProbe.successThreshold | default 1 }}
+          timeoutSeconds: {{ $.Values.readinessProbe.timeoutSeconds | default 3 }}
+          failureThreshold: {{ $.Values.readinessProbe.failureThreshold | default 3 }}
         {{- end }}
         {{- end }}
-        {{- if $.Values.app.resources }}
+        {{- if $.Values.resources }}
         resources:
-{{ toYaml $.Values.app.resources | indent 10 }}
+{{ toYaml $.Values.resources | indent 10 }}
         {{- end }}
 {{- end}}
       {{- end }}

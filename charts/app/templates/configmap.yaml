@@ -1,12 +1,12 @@
-{{- if $.Values.app.env }}
-{{- if $.Values.app.env.public }}
+{{- if $.Values.env }}
+{{- if $.Values.env.public }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Values.app.name }}
-  namespace: {{ printf "sid-%s" $.Values.app.namespace }}
+  name: {{ $.Values.name }}
+  namespace: {{ printf "sid-%s" $.Values.namespace }}
 data:
-    {{- range $name, $value := $.Values.app.env.public }}
+    {{- range $name, $value := $.Values.env.public }}
     {{ $name | quote}}: {{ $value | quote}}
     {{- end }}
 {{- end}}

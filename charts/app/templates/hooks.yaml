@@ -1,9 +1,9 @@
-{{- range $.Values.app.hooks }}
+{{- range $.Values.hooks }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  namespace: {{ printf "sid-%s" $.Values.app.namespace }}
+  namespace: {{ printf "sid-%s" $.Values.namespace }}
   generateName: {{ .name }}-
   annotations:
     argocd.argoproj.io/hook: {{ .stage | default "PreSync" }}
@@ -14,7 +14,7 @@ spec:
   ttlSecondsAfterFinished: 600
   template:
     spec:
-      serviceAccountName: {{ $.Values.app.name }}
+      serviceAccountName: {{ $.Values.name }}
       imagePullSecrets:
         - name: regcred
       containers:
@@ -30,14 +30,14 @@ spec:
         {{- end }}
         {{- end }}
         envFrom:
-          {{- if $.Values.app.env }}
-          {{- if $.Values.app.env.public }}
+          {{- if $.Values.env }}
+          {{- if $.Values.env.public }}
           - configMapRef:
-              name: {{ $.Values.app.name }}
+              name: {{ $.Values.name }}
           {{- end }}
-          {{- if $.Values.app.env.private }}
+          {{- if $.Values.env.private }}
           - secretRef:
-              name: {{ $.Values.app.name }}
+              name: {{ $.Values.name }}
           {{- end }}
           {{- end }}
       restartPolicy: Never
