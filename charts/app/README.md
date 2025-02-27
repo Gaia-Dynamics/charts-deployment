@@ -90,12 +90,23 @@ app:
     targetMemoryUtilizationPercentage: 70     # Target memory utilization
 
   # Ingress Configuration
-  ingress:                                    # Ingress array of object (Optional)
-    - domain: example.com                     # Domain
-      targetPort: 80                          # Service target port
-      ssl: false                              # enable ssh default: true (Optional)
-      paths:                                  # Paths
-        - "/"                                 # First path
+  ingress:                                    # Ingress array of objects (Optional)
+    - domain: example.com                     # (Required) Domain name for ingress
+      targetPort: 80                          # (Required) Service target port (usually the port where the app listens on)
+      paths:                                  # (Required) Paths configuration
+        - path: "/"                          # (Required) Path for ingress
+          pathType: "Prefix"                  # (Optional, default: "Prefix") Path Type
+          serviceName: *app.name              # (Optional, defaults to app.name) Target service name
+
+  # ALB Configuration
+  alb:
+    scope: internal                           # (Required) Possible values: internal, internet-facing
+    certificateArn: "arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d9b9"  # (Required) ACM certificate ARN
+    healthcheckInterval: "10"                 # (Optional, default: "10") Health check interval in seconds
+    healthcheckTimeout: "5"                   # (Optional, default: "5") Health check timeout in seconds
+    healthyThreshold: "2"                     # (Optional, default: "2") Healthy threshold count
+    unhealthyThreshold: "2"                   # (Optional, default: "2") Unhealthy threshold count
+    successCodes: "200"                        # (Optional, default: "200") Success response codes for health checks
 
   # Service Configuration (Exposing Ports)
   service:                                    # Service object (Optional)
