@@ -24,8 +24,6 @@ spec:
     spec:
       serviceAccountName: {{ $.Values.name }}
       terminationGracePeriodSeconds: 80
-      imagePullSecrets:
-        - name: regcred
       {{- if $.Values.image }}
       containers:
       - name: {{ $.Values.name }}
