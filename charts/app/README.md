@@ -102,6 +102,7 @@ app:
   alb:
     scope: internal                           # (Required) Possible values: internal, internet-facing
     certificateArn: "arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d9b9"  # (Required) ACM certificate ARN
+    idleTimeoutSeconds:                       # Connection idle timeout (in seconds)
     healthcheckInterval: "10"                 # (Optional, default: "10") Health check interval in seconds
     healthcheckPath:                          # (Optional, default: "/") Location of the health check endpoint
     healthcheckTimeout: "5"                   # (Optional, default: "5") Health check timeout in seconds
