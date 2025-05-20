@@ -89,6 +89,16 @@ app:
     targetCPUUtilizationPercentage: 80        # Target CPU utilization
     targetMemoryUtilizationPercentage: 70     # Target memory utilization
 
+    # Scale Up Behavior Configuration
+    scaleUpStabilizationWindowSeconds: 120    # How long to wait before scaling up again (default: 120)
+    scaleUpPods: 4                            # Maximum number of pods to add in one scaling event (default: 4)
+    scaleUpPeriodSeconds: 60                  # How frequently to check if scaling up is needed (default: 60)
+
+    # Scale Down Behavior Configuration
+    scaleDownStabilizationWindowSeconds: 600  # How long to wait before scaling down again (default: 600)
+    scaleDownPods: 2                          # Maximum number of pods to remove in one scaling event (default: 2)
+    scaleDownPeriodSeconds: 120               # How frequently to check if scaling down is needed (default: 120)
+
   # Ingress Configuration
   ingress:                                    # Ingress array of objects (Optional)
     - domain: example.com                     # (Required) Domain name for ingress
@@ -102,7 +112,7 @@ app:
   alb:
     scope: internal                           # (Required) Possible values: internal, internet-facing
     certificateArn: "arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d9b9"  # (Required) ACM certificate ARN
-    idleTimeoutSeconds:                       # Connection idle timeout (in seconds)
+    idleTimeoutSeconds: 60                    # (Optional, default: "60") Connection idle timeout in seconds
     healthcheckInterval: "10"                 # (Optional, default: "10") Health check interval in seconds
     healthcheckPath:                          # (Optional, default: "/") Location of the health check endpoint
     healthcheckTimeout: "5"                   # (Optional, default: "5") Health check timeout in seconds
