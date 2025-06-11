@@ -23,6 +23,18 @@ spec:
         env: {{ $.Values.environment }}
     spec:
       serviceAccountName: {{ $.Values.name }}
+      {{- if $.Values.nodeAffinity }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: {{ $.Values.nodeAffinity.key }}
+                operator: In
+                values:
+                - {{ $.Values.nodeAffinity.value }}
+      {{- end }}
       terminationGracePeriodSeconds: 80
       {{- if $.Values.image }}
       containers:

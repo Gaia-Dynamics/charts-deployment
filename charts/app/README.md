@@ -99,6 +99,13 @@ app:
     scaleDownPods: 2                          # Maximum number of pods to remove in one scaling event (default: 2)
     scaleDownPeriodSeconds: 120               # How frequently to check if scaling down is needed (default: 120)
 
+  # Node Affinity Configuration
+  nodeAffinity:                               # Node affinity configuration (Optional)
+    key: tier                                 # Label key to match on nodes
+    value: large                              # Label value to match on nodes
+    # When configured, pods will prefer to be scheduled on nodes with the specified label
+    # Uses preferredDuringSchedulingIgnoredDuringExecution - pods can still run on other nodes if needed
+
   # Ingress Configuration
   ingress:                                    # Ingress array of objects (Optional)
     - domain: example.com                     # (Required) Domain name for ingress
