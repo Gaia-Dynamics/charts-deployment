@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest)
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.4.8
 
 ## Values Overview
 
@@ -52,6 +52,10 @@ app:
       SECRET_KEY: "secret-key"                # Env var Key <-> Value
     private:                                  # Private Env vars Object
       ENV_NAME: SECERT_KEY_NAME               # Env var Key <-> Value
+
+  # External Secrets Configuration
+  externalSecrets:                            # External Secrets Object (Optional)
+    apiVersion: "external-secrets.io/v1beta1" # API version for ExternalSecret resource (default: "external-secrets.io/v1beta1")
 
   livenessProbe:                              # Liveness Probe Object
     enabled: true                             # Enable the liveness probe
