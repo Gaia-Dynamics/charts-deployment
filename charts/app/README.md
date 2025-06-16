@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.4.8
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.5.0
 
 ## Values Overview
 
@@ -50,8 +50,7 @@ app:
     public:                                   # Public Env vars Object
       DATABASE_URL: "db-url"                  # Env var Key <-> Value
       SECRET_KEY: "secret-key"                # Env var Key <-> Value
-    private:                                  # Private Env vars Object
-      ENV_NAME: SECERT_KEY_NAME               # Env var Key <-> Value
+    secretsManagerKey: "path/to/secret"       # AWS Secrets Manager key to extract all secrets from (Optional)
 
   # External Secrets Configuration
   externalSecrets:                            # External Secrets Object (Optional)
