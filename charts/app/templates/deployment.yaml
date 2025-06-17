@@ -66,7 +66,7 @@ spec:
           - configMapRef:
               name: {{ $.Values.name }}
           {{- end }}
-          {{- if $.Values.env.private }}
+          {{- if $.Values.env.secretsManagerKey }}
           - secretRef:
               name: {{ $.Values.name }}
           {{- end }}
