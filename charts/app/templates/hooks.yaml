@@ -15,8 +15,6 @@ spec:
   template:
     spec:
       serviceAccountName: {{ $.Values.name }}
-      imagePullSecrets:
-        - name: regcred
       containers:
       - name: {{ .name }}
         image: "{{ .image.registry }}/{{ .image.name }}:{{ .image.tag }}"
@@ -35,7 +33,7 @@ spec:
           - configMapRef:
               name: {{ $.Values.name }}
           {{- end }}
-          {{- if $.Values.env.private }}
+          {{- if $.Values.env.secretsManagerKey }}
           - secretRef:
               name: {{ $.Values.name }}
           {{- end }}
