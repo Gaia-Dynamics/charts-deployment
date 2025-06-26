@@ -33,7 +33,7 @@ spec:
           - configMapRef:
               name: {{ $.Values.name }}
           {{- end }}
-          {{- if $.Values.env.secretsManagerKey }}
+          {{- if $.Values.env.secretName }}
           - secretRef:
               name: {{ $.Values.name }}
           {{- end }}
