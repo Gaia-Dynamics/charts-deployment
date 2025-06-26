@@ -50,11 +50,7 @@ app:
     public:                                   # Public Env vars Object
       DATABASE_URL: "db-url"                  # Env var Key <-> Value
       SECRET_KEY: "secret-key"                # Env var Key <-> Value
-    secretsManagerKey: "path/to/secret"       # AWS Secrets Manager key to extract all secrets from (Optional)
-
-  # External Secrets Configuration
-  externalSecrets:                            # External Secrets Object (Optional)
-    apiVersion: "external-secrets.io/v1beta1" # API version for ExternalSecret resource (default: "external-secrets.io/v1beta1")
+    secretName: "[ENV]/[APP_NAME]"            # AWS Secrets Manager key to extract all secrets from (Optional)
 
   livenessProbe:                              # Liveness Probe Object
     enabled: true                             # Enable the liveness probe
