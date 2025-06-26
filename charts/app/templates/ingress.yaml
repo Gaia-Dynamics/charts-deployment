@@ -27,7 +27,9 @@ metadata:
     {{- if $.Values.alb.idleTimeoutSeconds }}
     alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds={{ $.Values.alb.idleTimeoutSeconds }}
     {{- end }}
+    {{- if $.Values.alb.certificateArn }}
     alb.ingress.kubernetes.io/certificate-arn: {{ $.Values.alb.certificateArn | default "arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d9b9" }}
+    {{- end }}
 spec:
   ingressClassName: alb
   rules:
