@@ -1,9 +1,8 @@
-{{- if ne "cronjob" $.Values.namespace  }}
+{{- if eq "deployment" (default "deployment" $.Values.type) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $.Values.name }}
-  namespace: {{ printf "sid-%s" $.Values.namespace }}
   labels:
     app: {{ $.Values.name }}
     env: {{ $.Values.environment }}
