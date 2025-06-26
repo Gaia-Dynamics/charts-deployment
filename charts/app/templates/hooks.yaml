@@ -3,7 +3,6 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  namespace: {{ printf "sid-%s" $.Values.namespace }}
   generateName: {{ .name }}-
   annotations:
     argocd.argoproj.io/hook: {{ .stage | default "PreSync" }}

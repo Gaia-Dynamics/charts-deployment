@@ -17,7 +17,7 @@ app:
 
   # General Configuration
   name: app-name                              # Name of the application (used in resources)
-  namespace: default                          # Namespace of the app
+  type: deployment                            # Either deployment or cronjob (default: deployment)
   environment: qa                             # Environment of the application (e.g., qa, prod)
   schedule: "*/5 * * * *"                     # Cron schedule for the CronJob (Optional)
   suspended: false                            # Set to true to suspend the deployment (replicas: 0)
