@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.5.0
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.5.8
 
 ## Values Overview
 
@@ -97,6 +97,24 @@ app:
     scaleDownStabilizationWindowSeconds: 600  # How long to wait before scaling down again (default: 600)
     scaleDownPods: 2                          # Maximum number of pods to remove in one scaling event (default: 2)
     scaleDownPeriodSeconds: 120               # How frequently to check if scaling down is needed (default: 120)
+
+  # Pod Scheduling Configuration
+
+  # Tolerations Configuration
+  tolerations:                                # Pod tolerations configuration (Optional)
+    - key: "workload-type"                    # Taint key to tolerate
+      operator: "Equal"                       # Operator (Equal, Exists)
+      value: "compute-intensive"              # Taint value to tolerate
+      effect: "NoSchedule"                    # Taint effect (NoSchedule, PreferNoSchedule, NoExecute)
+    # Tolerations allow pods to be scheduled on nodes with matching taints
+    # Useful for dedicated node groups (e.g., compute-intensive, GPU nodes)
+
+  # Node Selector Configuration
+  nodeSelector:                               # Node selector configuration (Optional)
+    workload-type: "compute-intensive"        # Label key-value pairs for node selection
+    instance-type: "c5.2xlarge"              # Additional node labels for targeting
+    # NodeSelector ensures pods are only scheduled on nodes with ALL specified labels
+    # Provides strict node targeting based on node labels
 
   # Node Affinity Configuration
   nodeAffinity:                               # Node affinity configuration (Optional)

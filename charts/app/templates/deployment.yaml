@@ -22,6 +22,14 @@ spec:
         env: {{ $.Values.environment }}
     spec:
       serviceAccountName: {{ $.Values.name }}
+      {{- if $.Values.tolerations }}
+      tolerations:
+{{ toYaml $.Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if $.Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml $.Values.nodeSelector | indent 8 }}
+      {{- end }}
       {{- if $.Values.nodeAffinity }}
       affinity:
         nodeAffinity:
@@ -100,5 +108,5 @@ spec:
         resources:
 {{ toYaml $.Values.resources | indent 10 }}
         {{- end }}
-{{- end}}
       {{- end }}
+{{- end }}
