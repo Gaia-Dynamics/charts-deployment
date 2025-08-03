@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.5.9
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.5.12
 
 ## Values Overview
 
@@ -136,6 +136,7 @@ app:
   alb:
     scope: internal                           # (Required) Possible values: internal, internet-facing
     certificateArn: "arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d9b9"  # (Optional) ACM certificate ARN - auto-inferred from environment if not specified
+    wafv2AclArn: "arn:aws:wafv2:us-east-2:916509834689:regional/webacl/production-web-acl/daa97d95-c424-420f-aed9-f9079bfae69c"  # (Optional) WAFv2 Web ACL ARN for security protection - auto-inferred for prod environment if not specified
     idleTimeoutSeconds: 60                    # (Optional, default: "60") Connection idle timeout in seconds
     healthcheckInterval: "10"                 # (Optional, default: "10") Health check interval in seconds
     healthcheckPath:                          # (Optional, default: "/") Location of the health check endpoint

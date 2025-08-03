@@ -26,3 +26,13 @@ arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d
 {{- end -}}
 {{- end -}}
 
+{{/*
+Get default WAFv2 ACL ARN based on environment
+*/}}
+{{- define "app.defaultWafv2AclArn" -}}
+{{- if eq .Values.environment "prod" -}}
+arn:aws:wafv2:us-east-2:916509834689:regional/webacl/production-web-acl/daa97d95-c424-420f-aed9-f9079bfae69c
+{{- else -}}
+{{- end -}}
+{{- end -}}
+

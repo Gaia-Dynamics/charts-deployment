@@ -30,6 +30,10 @@ metadata:
     {{- if $.Values.alb.certificateArn }}
     alb.ingress.kubernetes.io/certificate-arn: {{ $.Values.alb.certificateArn | default (include "app.defaultCertificateArn" $) }}
     {{- end }}
+    {{- $wafArn := $.Values.alb.wafv2AclArn | default (include "app.defaultWafv2AclArn" $) }}
+    {{- if $wafArn }}
+    alb.ingress.kubernetes.io/wafv2-acl-arn: {{ $wafArn }}
+    {{- end }}
 spec:
   ingressClassName: alb
   rules:
