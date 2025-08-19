@@ -22,6 +22,7 @@ arn:aws:acm:us-east-2:516268691093:certificate/718b6860-c7c4-45dc-b96f-63a6b8e24
 {{- else if eq .Values.environment "prod" -}}
 arn:aws:acm:us-east-2:916509834689:certificate/8e8f5c91-4694-4d53-9b1d-f9d541b68654
 {{- end -}}
+{{- end -}}
 
 {{/*
 Get default WAFv2 ACL ARN based on environment
