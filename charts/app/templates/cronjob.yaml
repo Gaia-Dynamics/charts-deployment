@@ -37,7 +37,14 @@ spec:
             image: "{{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag }}"
             imagePullPolicy: {{ $.Values.image.pullPolicy }}
             {{- if $.Values.image.command }}
+            {{- if kindIs "string" $.Values.image.command }}
             command: [{{ $.Values.image.command | quote }}]
+            {{- else }}
+            command:
+            {{- range $.Values.image.command }}
+            - {{ . | quote }}
+            {{- end }}
+            {{- end }}
             {{- end }}
             {{- if $.Values.image.args }}
             args:
