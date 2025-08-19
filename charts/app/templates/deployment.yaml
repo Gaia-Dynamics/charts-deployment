@@ -82,7 +82,7 @@ spec:
           {{- end }}
           {{- if $.Values.env.secretName }}
           - secretRef:
-              name: {{ $.Values.env.secretName }}
+              name: {{ $.Values.name }}
           {{- end }}
           {{- end }}
         {{- if $.Values.livenessProbe }}
