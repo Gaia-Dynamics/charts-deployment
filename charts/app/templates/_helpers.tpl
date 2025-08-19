@@ -18,12 +18,9 @@ Get default certificate ARN based on environment
 */}}
 {{- define "app.defaultCertificateArn" -}}
 {{- if eq .Values.environment "qa" -}}
-arn:aws:acm:us-east-2:516268691093:certificate/c54a25c9-7170-4ab6-b1b0-555891c6b0bf
+arn:aws:acm:us-east-2:516268691093:certificate/718b6860-c7c4-45dc-b96f-63a6b8e2402a
 {{- else if eq .Values.environment "prod" -}}
-arn:aws:acm:us-east-2:971422706275:certificate/a56540e5-5573-4162-a494-f8135749a2c8
-{{- else -}}
-arn:aws:acm:us-east-2:971422706275:certificate/d40f8a67-f864-49a0-800e-bb37ad38d9b9
-{{- end -}}
+arn:aws:acm:us-east-2:916509834689:certificate/8e8f5c91-4694-4d53-9b1d-f9d541b68654
 {{- end -}}
 
 {{/*
