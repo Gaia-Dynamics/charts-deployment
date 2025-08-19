@@ -30,8 +30,6 @@ spec:
         spec:
           serviceAccountName: {{ $.Values.name }}
           restartPolicy: Never
-          imagePullSecrets:
-            - name: regcred
           containers:
           - name: {{ $.Values.name }}
             image: "{{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag }}"
