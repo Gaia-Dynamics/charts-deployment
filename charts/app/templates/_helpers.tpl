@@ -8,8 +8,8 @@ Get AWS Account ID based on environment
 {{- define "app.awsAccountId" -}}
 {{- if eq .Values.environment "qa" -}}
 516268691093
-{{- else -}}
-971422706275
+{{- else if eq .Values.environment "prod" -}}
+916509834689
 {{- end -}}
 {{- end -}}
 
