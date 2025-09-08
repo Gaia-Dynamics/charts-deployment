@@ -179,7 +179,7 @@ spec:
       {{- end }}
     {{- end }}
     
-    {{- if and .publicAccess .bucketPolicy }}
+    {{- if .bucketPolicy }}
     policy: |
 {{ .bucketPolicy | indent 6 }}
     {{- end }}
