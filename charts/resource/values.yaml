@@ -1,0 +1,29 @@
+global:
+  environment: ""  # Will be set by ArgoCD (qa, prod, shared)
+  accountId: ""    # Will be set by ArgoCD
+  providerConfig: ""  # Will be set by ArgoCD
+  region: us-east-2
+  deletionPolicy: "Orphan"  # Will be set by ArgoCD (Delete for QA, Orphan for Prod)
+  tags:
+    managed-by: crossplane
+    department: engineering
+
+# Resource name - used as a base for all resource names
+resourceName: ""
+
+# S3 bucket configurations
+s3:
+  enabled: false
+  buckets: []
+  # Example bucket configuration:
+  # - name: my-bucket
+  #   publicAccess: false
+  #   enableEncryption: true
+  #   enableVersioning: true
+  #   enableAcceleration: false
+  #   objectLockEnabled: false
+  #   lifecycleRules: []
+  #   corsRules: []
+  #   websiteConfiguration: {}
+  #   notificationConfiguration: {}
+  #   tags: {}

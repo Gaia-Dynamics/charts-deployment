@@ -1,0 +1,271 @@
+{{- if .Values.s3.enabled }}
+{{- range .Values.s3.buckets }}
+---
+apiVersion: s3.aws.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: {{ .name }}
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+  annotations:
+    crossplane.io/external-name: {{ .name }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    {{- if .publicAccess }}
+    acl: public-read
+    {{- else }}
+    acl: private
+    {{- end }}
+    
+    {{- if .enableVersioning }}
+    versioningConfiguration:
+      status: Enabled
+    {{- end }}
+    
+    {{- if .enableAcceleration }}
+    accelerateConfiguration:
+      status: Enabled
+    {{- end }}
+    
+    {{- if .objectLockEnabled }}
+    objectLockEnabledForBucket: true
+    {{- end }}
+    
+    {{- if not .publicAccess }}
+    publicAccessBlockConfiguration:
+      blockPublicAcls: true
+      blockPublicPolicy: true
+      ignorePublicAcls: true
+      restrictPublicBuckets: true
+    {{- else }}
+    publicAccessBlockConfiguration:
+      blockPublicAcls: false
+      blockPublicPolicy: false
+      ignorePublicAcls: false
+      restrictPublicBuckets: false
+    {{- end }}
+    
+    {{- if .enableEncryption }}
+    serverSideEncryptionConfiguration:
+      rules:
+        - applyServerSideEncryptionByDefault:
+            sseAlgorithm: AES256
+    {{- end }}
+    
+    {{- if .websiteConfiguration }}
+    websiteConfiguration:
+      {{- if .websiteConfiguration.errorDocument }}
+      errorDocument:
+        key: {{ .websiteConfiguration.errorDocument | quote }}
+      {{- end }}
+      {{- if .websiteConfiguration.indexDocument }}
+      indexDocument:
+        suffix: {{ .websiteConfiguration.indexDocument | quote }}
+      {{- end }}
+    {{- end }}
+    
+    {{- if .corsRules }}
+    corsConfiguration:
+      corsRules:
+      {{- range .corsRules }}
+        - allowedMethods:
+          {{- range .allowedMethods }}
+          - {{ . }}
+          {{- end }}
+          allowedOrigins:
+          {{- range .allowedOrigins }}
+          - {{ . | quote }}
+          {{- end }}
+          {{- if .allowedHeaders }}
+          allowedHeaders:
+          {{- range .allowedHeaders }}
+          - {{ . | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .exposeHeaders }}
+          exposeHeaders:
+          {{- range .exposeHeaders }}
+          - {{ . | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .maxAgeSeconds }}
+          maxAgeSeconds: {{ .maxAgeSeconds }}
+          {{- end }}
+      {{- end }}
+    {{- end }}
+    
+    {{- if .lifecycleRules }}
+    lifecycleConfiguration:
+      rules:
+      {{- range .lifecycleRules }}
+        - status: {{ .status | default "Enabled" }}
+          {{- if .id }}
+          id: {{ .id | quote }}
+          {{- end }}
+          {{- if .prefix }}
+          filter:
+            prefix: {{ .prefix }}
+          {{- end }}
+          {{- if .expiration }}
+          expiration:
+            {{- if .expiration.days }}
+            days: {{ .expiration.days }}
+            {{- end }}
+            {{- if .expiration.expiredObjectDeleteMarker }}
+            expiredObjectDeleteMarker: {{ .expiration.expiredObjectDeleteMarker }}
+            {{- end }}
+          {{- end }}
+          {{- if .transitions }}
+          transitions:
+          {{- range .transitions }}
+            - storageClass: {{ .storageClass }}
+              days: {{ .days }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
+    {{- end }}
+    
+    {{- if .notificationConfiguration }}
+    notificationConfiguration:
+      {{- if .notificationConfiguration.lambdaFunctionConfigurations }}
+      lambdaFunctionConfigurations:
+      {{- range .notificationConfiguration.lambdaFunctionConfigurations }}
+        - lambdaFunctionArn: {{ printf "arn:aws:lambda:%s:%s:function:%s" $.Values.global.region $.Values.global.accountId .functionName | quote }}
+          events:
+          {{- range .events }}
+          - {{ . | quote }}
+          {{- end }}
+          {{- if .filter }}
+          filter:
+            {{- toYaml .filter | nindent 12 }}
+          {{- end }}
+      {{- end }}
+      {{- end }}
+      
+      {{- if .notificationConfiguration.queueConfigurations }}
+      queueConfigurations:
+      {{- range .notificationConfiguration.queueConfigurations }}
+        - queueArn: {{ printf "arn:aws:sqs:%s:%s:%s" $.Values.global.region $.Values.global.accountId .queueName | quote }}
+          events:
+          {{- range .events }}
+          - {{ . | quote }}
+          {{- end }}
+          {{- if .filter }}
+          filter:
+            {{- toYaml .filter | nindent 12 }}
+          {{- end }}
+      {{- end }}
+      {{- end }}
+      
+      {{- if .notificationConfiguration.topicConfigurations }}
+      topicConfigurations:
+      {{- range .notificationConfiguration.topicConfigurations }}
+        - topicArn: {{ printf "arn:aws:sns:%s:%s:%s" $.Values.global.region $.Values.global.accountId .topicName | quote }}
+          events:
+          {{- range .events }}
+          - {{ . | quote }}
+          {{- end }}
+          {{- if .filter }}
+          filter:
+            {{- toYaml .filter | nindent 12 }}
+          {{- end }}
+      {{- end }}
+      {{- end }}
+    {{- end }}
+    
+    tagging:
+      tagSet:
+        - key: Name
+          value: {{ .name }}
+        - key: Environment
+          value: {{ $.Values.global.environment }}
+        - key: ManagedBy
+          value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+        - key: Department
+          value: {{ $.Values.global.tags.department | default "engineering" }}
+        - key: Service
+          value: {{ $.Values.global.tags.service | default "gaia" }}
+        {{- range $key, $value := .tags }}
+        - key: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+
+{{- if .createPolicy }}
+---
+apiVersion: iam.aws.crossplane.io/v1beta1
+kind: Policy
+metadata:
+  name: {{ .name }}-policy
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  forProvider:
+    name: {{ .name }}-policy
+    description: {{ printf "Policy for S3 bucket %s managed by Crossplane" .name }}
+    document: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketAccess",
+            "Effect": "Allow",
+            "Action": [
+              "s3:ListBucket",
+              "s3:GetBucketLocation",
+              "s3:GetBucketVersioning",
+              "s3:GetBucketTagging"
+            ],
+            "Resource": "arn:aws:s3:::{{ .name }}"
+          },
+          {
+            "Sid": "ObjectAccess",
+            "Effect": "Allow",
+            "Action": [
+              "s3:GetObject",
+              "s3:GetObjectVersion",
+              "s3:PutObject",
+              "s3:DeleteObject",
+              "s3:DeleteObjectVersion"
+            ],
+            "Resource": "arn:aws:s3:::{{ .name }}/*"
+          }
+        ]
+      }
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if and .publicAccess .bucketPolicy }}
+---
+apiVersion: s3.aws.crossplane.io/v1alpha3
+kind: BucketPolicy
+metadata:
+  name: {{ .name }}-policy
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketNameRef:
+      name: {{ .name }}
+    rawPolicy: |
+{{ .bucketPolicy | indent 6 }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- end }}
+{{- end }}
