@@ -15,7 +15,6 @@ metadata:
 spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
-    region: {{ $.Values.global.region }}
     locationConstraint: {{ $.Values.global.region }}
     {{- if .publicAccess }}
     acl: public-read
