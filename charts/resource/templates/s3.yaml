@@ -180,8 +180,8 @@ spec:
     {{- end }}
     
     {{- if .bucketPolicy }}
-    policy: |
-{{ .bucketPolicy | indent 6 }}
+    policy:
+      {{- toYaml .bucketPolicy | nindent 6 }}
     {{- end }}
 
     tagging:
