@@ -459,6 +459,15 @@ entries:
     version: 1.0.0
   resource:
   - apiVersion: v2
+    created: "2025-09-08T00:57:16.810118852Z"
+    description: Helm chart for managing AWS resources via Crossplane
+    digest: 6e2bf56584f9505e93cf1afb0297b880b1ec9f7e6c5e49d6ec38819012252a8d
+    name: resource
+    type: application
+    urls:
+    - https://github.com/Gaia-Dynamics/charts-deployment/releases/download/resource-1.0.2/resource-1.0.2.tgz
+    version: 1.0.2
+  - apiVersion: v2
     created: "2025-09-08T00:51:30.164772858Z"
     description: Helm chart for managing AWS resources via Crossplane
     digest: 597abe75a51f43435e4bd45b02ef310dbff7045950e6e6756b742053ef6616f4
@@ -476,4 +485,4 @@ entries:
     urls:
     - https://github.com/Gaia-Dynamics/charts-deployment/releases/download/resource-1.0.0/resource-1.0.0.tgz
     version: 1.0.0
-generated: "2025-09-08T00:51:30.164960389Z"
+generated: "2025-09-08T00:57:16.810270265Z"
