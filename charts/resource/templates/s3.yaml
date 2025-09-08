@@ -22,21 +22,21 @@ spec:
     {{- else }}
     acl: private
     {{- end }}
-    
+
     {{- if .enableVersioning }}
     versioningConfiguration:
       status: Enabled
     {{- end }}
-    
+
     {{- if .enableAcceleration }}
     accelerateConfiguration:
       status: Enabled
     {{- end }}
-    
+
     {{- if .objectLockEnabled }}
     objectLockEnabledForBucket: true
     {{- end }}
-    
+
     {{- if not .publicAccess }}
     publicAccessBlockConfiguration:
       blockPublicAcls: true
@@ -50,14 +50,14 @@ spec:
       ignorePublicAcls: false
       restrictPublicBuckets: false
     {{- end }}
-    
+
     {{- if .enableEncryption }}
     serverSideEncryptionConfiguration:
       rules:
         - applyServerSideEncryptionByDefault:
             sseAlgorithm: AES256
     {{- end }}
-    
+
     {{- if .websiteConfiguration }}
     websiteConfiguration:
       {{- if .websiteConfiguration.errorDocument }}
@@ -69,7 +69,7 @@ spec:
         suffix: {{ .websiteConfiguration.indexDocument | quote }}
       {{- end }}
     {{- end }}
-    
+
     {{- if .corsRules }}
     corsConfiguration:
       corsRules:
@@ -99,7 +99,7 @@ spec:
           {{- end }}
       {{- end }}
     {{- end }}
-    
+
     {{- if .lifecycleRules }}
     lifecycleConfiguration:
       rules:
@@ -130,7 +130,7 @@ spec:
           {{- end }}
       {{- end }}
     {{- end }}
-    
+
     {{- if .notificationConfiguration }}
     notificationConfiguration:
       {{- if .notificationConfiguration.lambdaFunctionConfigurations }}
@@ -147,7 +147,7 @@ spec:
           {{- end }}
       {{- end }}
       {{- end }}
-      
+
       {{- if .notificationConfiguration.queueConfigurations }}
       queueConfigurations:
       {{- range .notificationConfiguration.queueConfigurations }}
@@ -162,7 +162,7 @@ spec:
           {{- end }}
       {{- end }}
       {{- end }}
-      
+
       {{- if .notificationConfiguration.topicConfigurations }}
       topicConfigurations:
       {{- range .notificationConfiguration.topicConfigurations }}
@@ -179,6 +179,11 @@ spec:
       {{- end }}
     {{- end }}
     
+    {{- if and .publicAccess .bucketPolicy }}
+    policy: |
+{{ .bucketPolicy | indent 6 }}
+    {{- end }}
+
     tagging:
       tagSet:
         - key: Name
@@ -247,27 +252,6 @@ spec:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}
 
-{{- if and .publicAccess .bucketPolicy }}
----
-apiVersion: s3.aws.crossplane.io/v1alpha3
-kind: BucketPolicy
-metadata:
-  name: {{ .name }}-policy
-  labels:
-    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
-    app.kubernetes.io/name: {{ .name }}
-    app.kubernetes.io/managed-by: crossplane
-    environment: {{ $.Values.global.environment }}
-spec:
-  forProvider:
-    region: {{ $.Values.global.region }}
-    bucketNameRef:
-      name: {{ .name }}
-    rawPolicy: |
-{{ .bucketPolicy | indent 6 }}
-  providerConfigRef:
-    name: {{ $.Values.global.providerConfig }}
-{{- end }}
 
 {{- end }}
 {{- end }}
