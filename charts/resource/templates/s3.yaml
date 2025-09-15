@@ -1,4 +1,4 @@
-{{- if .Values.s3.enabled }}
+{{- if .Values.s3.buckets }}
 {{- range .Values.s3.buckets }}
 ---
 apiVersion: s3.aws.crossplane.io/v1beta1
@@ -251,6 +251,27 @@ spec:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}
 
+{{- if and .createPolicy .attachToRole }}
+---
+apiVersion: iam.aws.crossplane.io/v1beta1
+kind: RolePolicyAttachment
+metadata:
+  name: {{ .name }}-role-attachment
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+    purpose: irsa-attachment
+spec:
+  forProvider:
+    policyArn: {{ printf "arn:aws:iam::%s:policy/%s-policy" $.Values.global.accountId .name }}
+    roleName: {{ .attachToRole }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- else if and (not .createPolicy) .attachToRole }}
+  {{- fail printf "Error: attachToRole is set for bucket %s but createPolicy is false. Set createPolicy: true to use attachToRole." .name }}
+{{- end }}
 
 {{- end }}
 {{- end }}

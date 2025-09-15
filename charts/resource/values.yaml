@@ -13,7 +13,6 @@ resourceName: ""
 
 # S3 bucket configurations
 s3:
-  enabled: false
   buckets: []
   # Example bucket configuration:
   # - name: my-bucket
@@ -22,6 +21,9 @@ s3:
   #   enableVersioning: true
   #   enableAcceleration: false
   #   objectLockEnabled: false
+  #   createPolicy: false  # Set to true to create an IAM policy for this bucket
+  #   attachToRole: ""     # IAM role name to attach the policy to (requires createPolicy: true)
+  #                       # For apps, use format: {app-name}-{environment} (e.g., platform-api-qa)
   #   lifecycleRules: []
   #   corsRules: []
   #   websiteConfiguration: {}
