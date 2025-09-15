@@ -215,7 +215,6 @@ metadata:
     environment: {{ $.Values.global.environment }}
 spec:
   forProvider:
-    region: {{ $.Values.global.region }}
     name: {{ .name }}-policy
     description: {{ printf "Policy for S3 bucket %s managed by Crossplane" .name }}
     document: |
@@ -265,7 +264,7 @@ metadata:
     purpose: irsa-attachment
 spec:
   forProvider:
-    policyArn: {{ printf "arn:aws:iam::%s:policy/%s-policy" $.Values.global.accountId .name }}
+    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ .name }}-policy
     roleName: {{ .attachToRole }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
