@@ -1,0 +1,173 @@
+{{- if .Values.sqs.queues }}
+{{- range .Values.sqs.queues }}
+---
+apiVersion: sqs.aws.crossplane.io/v1beta1
+kind: Queue
+metadata:
+  name: {{ .name }}
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+  annotations:
+    crossplane.io/external-name: {{ .name }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+
+    {{- if .fifo }}
+    fifoQueue: true
+    contentBasedDeduplication: {{ .contentBasedDeduplication | default false }}
+    {{- end }}
+
+    {{- if .visibilityTimeout }}
+    visibilityTimeout: {{ .visibilityTimeout }}
+    {{- end }}
+
+    {{- if .messageRetentionPeriod }}
+    messageRetentionPeriod: {{ .messageRetentionPeriod }}
+    {{- end }}
+
+    {{- if .maximumMessageSize }}
+    maximumMessageSize: {{ .maximumMessageSize }}
+    {{- end }}
+
+    {{- if .delaySeconds }}
+    delaySeconds: {{ .delaySeconds }}
+    {{- end }}
+
+    {{- if .receiveMessageWaitTimeSeconds }}
+    receiveMessageWaitTimeSeconds: {{ .receiveMessageWaitTimeSeconds }}
+    {{- end }}
+
+    {{- if .redrivePolicy }}
+    redrivePolicy: |
+      {
+        "deadLetterTargetArn": "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ .redrivePolicy.deadLetterQueueName }}",
+        "maxReceiveCount": {{ .redrivePolicy.maxReceiveCount | default 3 }}
+      }
+    {{- end }}
+
+    {{- if .redriveAllowPolicy }}
+    redriveAllowPolicy: |
+      {
+        "redrivePermission": "{{ .redriveAllowPolicy.redrivePermission | default "allowAll" }}"
+        {{- if .redriveAllowPolicy.sourceQueues }},
+        "sourceQueueArns": [
+          {{- range $index, $queue := .redriveAllowPolicy.sourceQueues }}
+          {{- if $index }},{{- end }}
+          "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ $queue }}"
+          {{- end }}
+        ]
+        {{- end }}
+      }
+    {{- end }}
+
+    {{- if .kmsMasterKeyId }}
+    kmsMasterKeyId: {{ .kmsMasterKeyId }}
+    {{- end }}
+
+    {{- if .kmsDataKeyReusePeriodSeconds }}
+    kmsDataKeyReusePeriodSeconds: {{ .kmsDataKeyReusePeriodSeconds }}
+    {{- end }}
+
+    {{- if .sseEnabled }}
+    sseEnabled: {{ .sseEnabled }}
+    {{- end }}
+
+    {{- if .policy }}
+    policy: |
+      {{ .policy | nindent 6 }}
+    {{- end }}
+
+    tags:
+      Name: {{ .name }}
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
+      {{- range $key, $value := .tags }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+
+{{- if .createPolicy }}
+---
+apiVersion: iam.aws.crossplane.io/v1beta1
+kind: Policy
+metadata:
+  name: {{ .name }}-policy
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  forProvider:
+    name: {{ .name }}-policy
+    description: {{ printf "Policy for SQS queue %s managed by Crossplane" .name }}
+    document: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "QueueAccess",
+            "Effect": "Allow",
+            "Action": [
+              "sqs:DeleteMessage",
+              "sqs:GetQueueAttributes",
+              "sqs:GetQueueUrl",
+              "sqs:ReceiveMessage",
+              "sqs:SendMessage",
+              "sqs:ChangeMessageVisibility",
+              "sqs:PurgeQueue"
+            ],
+            "Resource": "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ .name }}"
+          }
+          {{- if .kmsMasterKeyId }},
+          {
+            "Sid": "KMSAccess",
+            "Effect": "Allow",
+            "Action": [
+              "kms:Decrypt",
+              "kms:GenerateDataKey"
+            ],
+            "Resource": "{{ .kmsMasterKeyId }}"
+          }
+          {{- end }}
+        ]
+      }
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if and .createPolicy .attachToRoles }}
+{{- $queue := . }}
+{{- range $index, $role := .attachToRoles }}
+---
+apiVersion: iam.aws.crossplane.io/v1beta1
+kind: RolePolicyAttachment
+metadata:
+  name: {{ $queue.name }}-role-attachment-{{ $index }}
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ $queue.name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+    purpose: irsa-attachment
+spec:
+  forProvider:
+    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ $queue.name }}-policy
+    roleName: {{ $role }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+{{- else if and (not .createPolicy) .attachToRoles }}
+  {{- fail printf "Error: attachToRoles is set for queue %s but createPolicy is false. Set createPolicy: true to use attachToRoles." .name }}
+{{- end }}
+
+{{- end }}
+{{- end }}
