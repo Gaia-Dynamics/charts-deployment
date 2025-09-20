@@ -9,13 +9,13 @@ metadata:
     helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     app.kubernetes.io/name: {{ .name }}
     app.kubernetes.io/managed-by: crossplane
-    environment: {{ .Values.global.environment }}
+    environment: {{ $.Values.global.environment }}
   annotations:
     crossplane.io/external-name: {{ .name }}
 spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
-    region: {{ include "resource.region" $ }}
+    region: {{ $.Values.global.region }}
 
     {{- if .fifo }}
     fifoQueue: true
@@ -47,7 +47,7 @@ spec:
       {{- if .redrivePolicy.deadLetterTargetArn }}
       deadLetterTargetArn: {{ .redrivePolicy.deadLetterTargetArn | quote }}
       {{- else if .redrivePolicy.deadLetterQueueName }}
-      deadLetterTargetArn: "arn:aws:sqs:{{ include "resource.region" $ }}:{{ include "resource.accountId" $ }}:{{ .redrivePolicy.deadLetterQueueName }}"
+      deadLetterTargetArn: "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ .redrivePolicy.deadLetterQueueName }}"
       {{- else }}
       {{- fail "redrivePolicy requires either deadLetterTargetArn or deadLetterQueueName with global.region and global.accountId" }}
       {{- end }}
@@ -81,7 +81,7 @@ spec:
       {{ $key }}: {{ $value | quote }}
       {{- end }}
   providerConfigRef:
-    name: {{ include "resource.providerConfig" $ }}
+    name: {{ $.Values.global.providerConfig }}
 
 {{- if .createPolicy }}
 ---
@@ -93,7 +93,7 @@ metadata:
     helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     app.kubernetes.io/name: {{ .name }}
     app.kubernetes.io/managed-by: crossplane
-    environment: {{ .Values.global.environment }}
+    environment: {{ $.Values.global.environment }}
 spec:
   forProvider:
     name: {{ .name }}-policy
@@ -114,7 +114,7 @@ spec:
               "sqs:ChangeMessageVisibility",
               "sqs:PurgeQueue"
             ],
-            "Resource": "arn:aws:sqs:{{ include "resource.region" $ }}:{{ include "resource.accountId" $ }}:{{ .name }}"
+            "Resource": "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ .name }}"
           }
           {{- if .kmsMasterKeyId }},
           {
@@ -130,7 +130,7 @@ spec:
         ]
       }
   providerConfigRef:
-    name: {{ include "resource.providerConfig" $ }}
+    name: {{ $.Values.global.providerConfig }}
 {{- end }}
 
 {{- if and .createPolicy .attachToRoles }}
@@ -145,14 +145,14 @@ metadata:
     helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     app.kubernetes.io/name: {{ $queue.name }}
     app.kubernetes.io/managed-by: crossplane
-    environment: {{ .Values.global.environment }}
+    environment: {{ $.Values.global.environment }}
     purpose: irsa-attachment
 spec:
   forProvider:
-    policyArn: arn:aws:iam::{{ include "resource.accountId" $ }}:policy/{{ $queue.name }}-policy
+    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ $queue.name }}-policy
     roleName: {{ $role }}
   providerConfigRef:
-    name: {{ include "resource.providerConfig" $ }}
+    name: {{ $.Values.global.providerConfig }}
 {{- end }}
 {{- else if and (not .createPolicy) .attachToRoles }}
   {{- fail printf "Error: attachToRoles is set for queue %s but createPolicy is false. Set createPolicy: true to use attachToRoles." .name }}
