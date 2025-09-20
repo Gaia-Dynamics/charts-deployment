@@ -250,26 +250,29 @@ spec:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}
 
-{{- if and .createPolicy .attachToRole }}
+{{- if and .createPolicy .attachToRoles }}
+{{- $bucket := . }}
+{{- range $index, $role := .attachToRoles }}
 ---
 apiVersion: iam.aws.crossplane.io/v1beta1
 kind: RolePolicyAttachment
 metadata:
-  name: {{ .name }}-role-attachment
+  name: {{ $bucket.name }}-role-attachment-{{ $index }}
   labels:
     helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
-    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/name: {{ $bucket.name }}
     app.kubernetes.io/managed-by: crossplane
     environment: {{ $.Values.global.environment }}
     purpose: irsa-attachment
 spec:
   forProvider:
-    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ .name }}-policy
-    roleName: {{ .attachToRole }}
+    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ $bucket.name }}-policy
+    roleName: {{ $role }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
-{{- else if and (not .createPolicy) .attachToRole }}
-  {{- fail printf "Error: attachToRole is set for bucket %s but createPolicy is false. Set createPolicy: true to use attachToRole." .name }}
+{{- end }}
+{{- else if and (not .createPolicy) .attachToRoles }}
+  {{- fail printf "Error: attachToRoles is set for bucket %s but createPolicy is false. Set createPolicy: true to use attachToRoles." .name }}
 {{- end }}
 
 {{- end }}
