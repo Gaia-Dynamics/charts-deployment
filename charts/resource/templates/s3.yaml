@@ -1,4 +1,4 @@
-{{- if .Values.s3.buckets }}
+{{- if and .Values.s3 .Values.s3.buckets }}
 {{- range .Values.s3.buckets }}
 ---
 apiVersion: s3.aws.crossplane.io/v1beta1

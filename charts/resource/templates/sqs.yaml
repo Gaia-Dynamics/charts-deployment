@@ -1,4 +1,4 @@
-{{- if .Values.sqs.queues }}
+{{- if and .Values.sqs .Values.sqs.queues }}
 {{- range .Values.sqs.queues }}
 ---
 apiVersion: sqs.aws.crossplane.io/v1beta1
