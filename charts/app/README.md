@@ -100,6 +100,22 @@ app:
 
   # Pod Scheduling Configuration
 
+  # Workload Profile (Recommended - Simplified Scheduling)
+  workload:                                   # Workload profile configuration (Optional)
+    profile: compute-intensive                # Workload type: "standard", "compute-intensive", "memory-intensive"
+    size: large                              # Resource tier: "small", "medium", "large", "xlarge"
+    # Profiles automatically configure tolerations and affinity based on workload type:
+    # - standard: General web apps, APIs (no special scheduling requirements)
+    # - compute-intensive: AI/ML workloads (tolerates compute nodes, prefers large tier)
+    # - memory-intensive: Memory hungry apps (tolerates memory nodes, prefers large tier)
+    #
+    # Size determines node tier preference:
+    # - small/medium: Standard nodes
+    # - large/xlarge: Prefers large tier nodes with more resources
+
+  # Legacy Scheduling Configuration (Advanced - Direct Kubernetes Configuration)
+  # Note: Workload profiles are ignored when these are specified
+
   # Tolerations Configuration
   tolerations:                                # Pod tolerations configuration (Optional)
     - key: "workload-type"                    # Taint key to tolerate

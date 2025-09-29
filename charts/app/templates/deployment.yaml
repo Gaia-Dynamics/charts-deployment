@@ -22,6 +22,7 @@ spec:
         env: {{ $.Values.environment }}
     spec:
       serviceAccountName: {{ $.Values.name }}
+      {{- /* Legacy support for direct scheduling configuration */ -}}
       {{- if $.Values.tolerations }}
       tolerations:
 {{ toYaml $.Values.tolerations | indent 8 }}
@@ -41,6 +42,65 @@ spec:
                 operator: In
                 values:
                 - {{ $.Values.nodeAffinity.value }}
+      {{- end }}
+      {{- /* New workload profile abstraction */ -}}
+      {{- if and $.Values.workload (not $.Values.tolerations) (not $.Values.nodeAffinity) }}
+      {{- if eq $.Values.workload.profile "compute-intensive" }}
+      tolerations:
+        - key: "workload-type"
+          operator: "Equal"
+          value: "compute-intensive"
+          effect: "NoSchedule"
+      {{- if $.Values.workload.size }}
+      {{- if or (eq $.Values.workload.size "large") (eq $.Values.workload.size "xlarge") }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - large
+      {{- end }}
+      {{- end }}
+      {{- else if eq $.Values.workload.profile "memory-intensive" }}
+      tolerations:
+        - key: "workload-type"
+          operator: "Equal"
+          value: "memory-intensive"
+          effect: "NoSchedule"
+      {{- if $.Values.workload.size }}
+      {{- if or (eq $.Values.workload.size "large") (eq $.Values.workload.size "xlarge") }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - large
+      {{- end }}
+      {{- end }}
+      {{- else if eq $.Values.workload.profile "standard" }}
+      {{- if $.Values.workload.size }}
+      {{- if or (eq $.Values.workload.size "large") (eq $.Values.workload.size "xlarge") }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - large
+      {{- end }}
+      {{- end }}
+      {{- end }}
       {{- end }}
       terminationGracePeriodSeconds: 80
       {{- if $.Values.image }}
