@@ -76,7 +76,7 @@ spec:
 
 ---
 # DB Subnet Group
-apiVersion: rds.aws.upbound.io/v1beta2
+apiVersion: rds.aws.upbound.io/v1beta1
 kind: SubnetGroups
 metadata:
   name: {{ .name }}-subnet-group
@@ -120,7 +120,7 @@ spec:
 
 ---
 # DB Cluster Parameter Group
-apiVersion: rds.aws.upbound.io/v1beta2
+apiVersion: rds.aws.upbound.io/v1beta1
 kind: ClusterParameterGroups
 metadata:
   name: {{ .name }}-cluster-params
@@ -165,7 +165,7 @@ spec:
 
 ---
 # DB Parameter Group (for instances)
-apiVersion: rds.aws.upbound.io/v1beta2
+apiVersion: rds.aws.upbound.io/v1beta1
 kind: ParameterGroups
 metadata:
   name: {{ .name }}-instance-params
@@ -210,7 +210,7 @@ spec:
 
 ---
 # Aurora DB Cluster
-apiVersion: rds.aws.upbound.io/v1beta2
+apiVersion: rds.aws.upbound.io/v1beta1
 kind: Cluster
 metadata:
   name: {{ .name }}
@@ -344,7 +344,7 @@ spec:
 {{- range $index := until (int $instanceCount) }}
 ---
 # Aurora DB Instance {{ $index }}
-apiVersion: rds.aws.upbound.io/v1beta2
+apiVersion: rds.aws.upbound.io/v1beta1
 kind: ClusterInstances
 metadata:
   name: {{ $cluster.name }}-instance-{{ $index }}
