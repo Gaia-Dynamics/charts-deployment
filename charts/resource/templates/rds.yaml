@@ -241,8 +241,8 @@ spec:
 
     # Auto-generate password and store in connection info secret
     autoGeneratePassword: true
-    masterPasswordSecretRef:
-      name: {{ .name }}-connection-info
+    masterPasswordSecretRef:  # Password will be auto-generated here
+      name: {{ .name }}-password
       namespace: {{ $.Values.global.namespace | default "crossplane-system" }}
       key: password
 
