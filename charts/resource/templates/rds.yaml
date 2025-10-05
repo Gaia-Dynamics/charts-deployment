@@ -227,11 +227,11 @@ spec:
     # Engine configuration
     engine: {{ .engine | default "aurora-postgresql" }}
     {{- if eq (.engine | default "aurora-postgresql") "aurora-postgresql" }}
-    engineVersion: {{ .engineVersion | default "16.4" }}
+    engineVersion: {{ .engineVersion | default "16.4" | quote }}
     {{- else if eq .engine "aurora-mysql" }}
-    engineVersion: {{ .engineVersion | default "8.0.mysql_aurora.3.07.1" }}
+    engineVersion: {{ .engineVersion | default "8.0.mysql_aurora.3.07.1" | quote }}
     {{- else }}
-    engineVersion: {{ .engineVersion }}
+    engineVersion: {{ .engineVersion | quote }}
     {{- end }}
     engineMode: {{ .engineMode | default "provisioned" }}
 
