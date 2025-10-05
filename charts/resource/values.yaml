@@ -133,34 +133,26 @@ rds:
   #     backup: "true"
   #
   #   # ============================================================================
-  #   # CROSS-CLUSTER CREDENTIAL SYNC (Recommended for production)
+  #   # AUTOMATIC CONNECTION SECRET
   #   # ============================================================================
-  #   # Automatic credential sync to AWS Secrets Manager
-  #   # This enables a secure cross-cluster credential flow:
-  #   #   1. Crossplane (tools cluster) creates RDS and auto-generates password
-  #   #   2. PushSecret (tools cluster) reads Crossplane secret and pushes to AWS Secrets Manager
-  #   #   3. You deploy ExternalSecret to QA/Prod cluster (see examples/rds-externalsecret-for-apps.yaml)
-  #   #   4. Applications (QA/Prod cluster) mount the ExternalSecret
-  #   # Developers never see or handle the actual database passwords!
+  #   # Crossplane automatically creates a Kubernetes secret with connection details:
+  #   #   Secret name: {cluster-name}-connection-info
+  #   #   Namespace: crossplane-system (or global.namespace)
   #   #
-  #   syncToSecretsManager:
-  #     enabled: true                                # Enable automatic sync to Secrets Manager
-  #
-  #     # Tools cluster configuration (where Crossplane + PushSecret run)
-  #     secretStoreRef: aws-secretsmanager           # ClusterSecretStore name in tools cluster
-  #     secretStoreKind: ClusterSecretStore          # Kind of secret store
-  #
-  #     # Secrets Manager path configuration
-  #     remoteKeyPrefix: rds/qa/my-app-db            # OPTIONAL - Custom Secrets Manager path
-  #                                                  # Default: rds/{environment}/{cluster-name}
-  #                                                  # Example: If name=my-db and env=qa, path will be rds/qa/my-db
-  #
-  #   # Setup instructions:
-  #   # 1. Deploy ClusterSecretStore to tools cluster (see examples/clustersecretstore-tools.yaml)
-  #   # 2. Deploy ClusterSecretStore to QA/Prod cluster (see examples/clustersecretstore-qa.yaml)
-  #   # 3. Deploy this resource chart via ArgoCD targeting TOOLS cluster
-  #   # 4. Deploy ExternalSecret to QA/Prod cluster (see examples/rds-externalsecret-for-apps.yaml)
-  #   # 5. Apps reference the secret: {cluster-name}-db-credentials
+  #   # The secret contains:
+  #   #   - endpoint: RDS cluster endpoint
+  #   #   - port: Database port
+  #   #   - username: Master username
+  #   #   - password: Auto-generated password
+  #   #   - dbname: Database name
   #   #
-  #   # IMPORTANT: This chart creates the PushSecret in tools cluster.
-  #   # You must separately deploy the ExternalSecret to QA/Prod cluster.
+  #   # To use in your app:
+  #   #   1. Reference the secret in your deployment
+  #   #   2. Mount as environment variables or volume
+  #   #
+  #   # Example:
+  #   #   envFrom:
+  #   #     - secretRef:
+  #   #         name: my-app-db-qa-connection-info
+  #   #
+  #   # The developer never sees the password - it's auto-generated and stored in the secret!
