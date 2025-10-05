@@ -139,14 +139,14 @@ rds:
   #   # This enables a secure cross-cluster credential flow:
   #   #   1. Crossplane (tools cluster) creates RDS and auto-generates password
   #   #   2. PushSecret (tools cluster) reads Crossplane secret and pushes to AWS Secrets Manager
-  #   #   3. ExternalSecret (QA/Prod cluster) pulls credentials from Secrets Manager
+  #   #   3. You deploy ExternalSecret to QA/Prod cluster (see examples/rds-externalsecret-for-apps.yaml)
   #   #   4. Applications (QA/Prod cluster) mount the ExternalSecret
   #   # Developers never see or handle the actual database passwords!
   #   #
   #   syncToSecretsManager:
   #     enabled: true                                # Enable automatic sync to Secrets Manager
   #
-  #     # Tools cluster configuration (where Crossplane runs)
+  #     # Tools cluster configuration (where Crossplane + PushSecret run)
   #     secretStoreRef: aws-secretsmanager           # ClusterSecretStore name in tools cluster
   #     secretStoreKind: ClusterSecretStore          # Kind of secret store
   #
@@ -155,16 +155,12 @@ rds:
   #                                                  # Default: rds/{environment}/{cluster-name}
   #                                                  # Example: If name=my-db and env=qa, path will be rds/qa/my-db
   #
-  #     # QA/Prod cluster configuration (where applications run)
-  #     createExternalSecretForApps: true            # Create ExternalSecret for apps to use
-  #     appNamespace: default                        # Namespace where app ExternalSecret will be created
-  #     appSecretStoreRef: aws-secretsmanager        # ClusterSecretStore name in app cluster
-  #     appSecretStoreKind: ClusterSecretStore       # Kind of secret store in app cluster
-  #     refreshInterval: 5m                          # How often to refresh from Secrets Manager
-  #
   #   # Setup instructions:
   #   # 1. Deploy ClusterSecretStore to tools cluster (see examples/clustersecretstore-tools.yaml)
   #   # 2. Deploy ClusterSecretStore to QA/Prod cluster (see examples/clustersecretstore-qa.yaml)
-  #   # 3. Deploy this resource chart via ArgoCD to tools cluster
-  #   # 4. ExternalSecret will be created in QA/Prod cluster automatically
+  #   # 3. Deploy this resource chart via ArgoCD targeting TOOLS cluster
+  #   # 4. Deploy ExternalSecret to QA/Prod cluster (see examples/rds-externalsecret-for-apps.yaml)
   #   # 5. Apps reference the secret: {cluster-name}-db-credentials
+  #   #
+  #   # IMPORTANT: This chart creates the PushSecret in tools cluster.
+  #   # You must separately deploy the ExternalSecret to QA/Prod cluster.
