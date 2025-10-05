@@ -132,15 +132,39 @@ rds:
   #     application: my-app
   #     backup: "true"
   #
-  #   # Automatic credential sync to AWS Secrets Manager (recommended)
-  #   # This pushes DB credentials to Secrets Manager so apps can pull them via External Secrets
-  #   # Developers never see the actual passwords
+  #   # ============================================================================
+  #   # CROSS-CLUSTER CREDENTIAL SYNC (Recommended for production)
+  #   # ============================================================================
+  #   # Automatic credential sync to AWS Secrets Manager
+  #   # This enables a secure cross-cluster credential flow:
+  #   #   1. Crossplane (tools cluster) creates RDS and auto-generates password
+  #   #   2. PushSecret (tools cluster) reads Crossplane secret and pushes to AWS Secrets Manager
+  #   #   3. ExternalSecret (QA/Prod cluster) pulls credentials from Secrets Manager
+  #   #   4. Applications (QA/Prod cluster) mount the ExternalSecret
+  #   # Developers never see or handle the actual database passwords!
+  #   #
   #   syncToSecretsManager:
-  #     enabled: true                            # Enable automatic sync to Secrets Manager
-  #     secretStoreRef: secretstore              # ClusterSecretStore name (default: secretstore)
-  #     secretStoreKind: ClusterSecretStore      # Kind of secret store
-  #     remoteKeyPrefix: qa/my-app-db            # OPTIONAL - Secrets Manager path
-  #                                              # Default: {environment}/{cluster-name}
-  #                                              # Example: If name=my-db-qa and env=qa, path will be qa/my-db-qa
-  #     createExternalSecretForApps: true        # Create ExternalSecret for apps to use
-  #     appNamespace: default                    # Namespace where app ExternalSecret will be created
+  #     enabled: true                                # Enable automatic sync to Secrets Manager
+  #
+  #     # Tools cluster configuration (where Crossplane runs)
+  #     secretStoreRef: aws-secretsmanager           # ClusterSecretStore name in tools cluster
+  #     secretStoreKind: ClusterSecretStore          # Kind of secret store
+  #
+  #     # Secrets Manager path configuration
+  #     remoteKeyPrefix: rds/qa/my-app-db            # OPTIONAL - Custom Secrets Manager path
+  #                                                  # Default: rds/{environment}/{cluster-name}
+  #                                                  # Example: If name=my-db and env=qa, path will be rds/qa/my-db
+  #
+  #     # QA/Prod cluster configuration (where applications run)
+  #     createExternalSecretForApps: true            # Create ExternalSecret for apps to use
+  #     appNamespace: default                        # Namespace where app ExternalSecret will be created
+  #     appSecretStoreRef: aws-secretsmanager        # ClusterSecretStore name in app cluster
+  #     appSecretStoreKind: ClusterSecretStore       # Kind of secret store in app cluster
+  #     refreshInterval: 5m                          # How often to refresh from Secrets Manager
+  #
+  #   # Setup instructions:
+  #   # 1. Deploy ClusterSecretStore to tools cluster (see examples/clustersecretstore-tools.yaml)
+  #   # 2. Deploy ClusterSecretStore to QA/Prod cluster (see examples/clustersecretstore-qa.yaml)
+  #   # 3. Deploy this resource chart via ArgoCD to tools cluster
+  #   # 4. ExternalSecret will be created in QA/Prod cluster automatically
+  #   # 5. Apps reference the secret: {cluster-name}-db-credentials
