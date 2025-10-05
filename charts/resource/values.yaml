@@ -29,3 +29,118 @@ s3:
   #   websiteConfiguration: {}
   #   notificationConfiguration: {}
   #   tags: {}
+
+# RDS Aurora cluster configurations
+rds:
+  clusters: []
+  # Minimal configuration - everything auto-configured based on environment:
+  # - name: my-app-db-qa
+  #   # That's it! The following are auto-configured:
+  #   # - Password: Auto-generated random 32-char password
+  #   # - QA Subnets: subnet-06b3bc451435c90c3, subnet-03c3b3c8377cb3f88
+  #   # - Prod Subnets: subnet-0bc4961ea0f8b699d, subnet-0e0efa4896e447362
+  #   # - Security Group: Auto-created with access from:
+  #   #   - QA: sg-023605daa63299b42
+  #   #   - Prod: sg-004477da6d81e6cdf
+  #
+  # Full configuration example:
+  # - name: my-aurora-cluster
+  #   engine: aurora-postgresql              # Options: aurora-postgresql, aurora-mysql
+  #   engineVersion: "16.4"                  # Default: 16.4 for PostgreSQL, 8.0.mysql_aurora.3.07.1 for MySQL
+  #   engineMode: provisioned                # Options: provisioned, serverless (v1)
+  #
+  #   # Database configuration
+  #   databaseName: mydb                     # Default: postgres
+  #   masterUsername: admin                  # Default: postgres
+  #   masterUserPasswordSecretRef:           # OPTIONAL - Auto-generated if not provided
+  #     name: db-master-password             # If omitted, a random password is generated
+  #     namespace: crossplane-system
+  #     key: password
+  #
+  #   # Network configuration (OPTIONAL - auto-configured based on environment)
+  #   subnetIds:                             # OPTIONAL - Uses env defaults if omitted
+  #     - subnet-xxxxx                       # QA default: subnet-06b3bc451435c90c3, subnet-03c3b3c8377cb3f88
+  #     - subnet-yyyyy                       # Prod default: subnet-0bc4961ea0f8b699d, subnet-0e0efa4896e447362
+  #   vpcSecurityGroupIds:                   # OPTIONAL - Auto-created if omitted
+  #     - sg-xxxxx                           # If omitted, creates SG with access from qa/prod app SGs
+  #   vpcId: vpc-xxxxx                       # OPTIONAL - Used when auto-creating security group
+  #
+  #   # Instance configuration
+  #   instanceCount: 2                       # Number of instances (default: 1)
+  #   instanceClass: db.t4g.medium          # Default: db.t4g.medium (provisioned) or db.serverless
+  #   instanceType: provisioned              # Options: provisioned, serverless
+  #
+  #   # Serverless v2 scaling (optional, for provisioned mode with serverless instances)
+  #   serverlessV2ScalingConfiguration:
+  #     minCapacity: 0.5                     # ACUs (0.5 to 128)
+  #     maxCapacity: 1                       # ACUs (0.5 to 128)
+  #
+  #   # Backup configuration
+  #   backupRetentionPeriod: 7               # Days (default: 7)
+  #   preferredBackupWindow: "03:00-04:00"   # UTC time window
+  #   preferredMaintenanceWindow: "mon:04:00-mon:05:00"
+  #   skipFinalSnapshot: false               # Set to true for non-prod environments
+  #
+  #   # Security
+  #   storageEncrypted: true                 # Default: true
+  #   kmsKeyId: ""                          # Optional KMS key ARN for encryption
+  #   deletionProtection: false              # Enable for production
+  #   publiclyAccessible: false              # Default: false
+  #
+  #   # Monitoring and logging
+  #   enableCloudwatchLogsExports:           # Optional, defaults to ["postgresql"] for PostgreSQL
+  #     - postgresql
+  #   enablePerformanceInsights: true
+  #   performanceInsightsRetentionPeriod: 7
+  #   performanceInsightsKmsKeyId: ""       # Optional KMS key for PI
+  #   monitoringInterval: 60                 # Enhanced monitoring interval in seconds (0, 1, 5, 10, 15, 30, 60)
+  #   monitoringRoleArn: ""                 # IAM role ARN for enhanced monitoring
+  #
+  #   # High availability
+  #   availabilityZones:                     # Optional, let AWS choose if not specified
+  #     - us-east-2a
+  #     - us-east-2b
+  #
+  #   # Parameter groups (optional)
+  #   parameterGroupFamily: aurora-postgresql16  # Default based on engine version
+  #   clusterParameters:                     # Cluster-level parameters
+  #     - name: shared_preload_libraries
+  #       value: pg_stat_statements
+  #   instanceParameters:                    # Instance-level parameters
+  #     - name: log_min_duration_statement
+  #       value: "1000"
+  #       applyMethod: immediate             # immediate or pending-reboot
+  #
+  #   # IAM policy and role attachment
+  #   createPolicy: true                     # Create IAM policy for RDS access
+  #   attachToRoles:                        # IRSA roles to attach the policy to
+  #     - platform-api-qa
+  #     - worker-service-qa
+  #
+  #   # Secret creation (optional)
+  #   createSecret: true                     # Create K8s secret with connection details
+  #   secretNamespace: default               # Namespace for the connection secret
+  #   customClusterSuffix: ""               # Custom suffix for cluster endpoint (usually auto-generated)
+  #   port: 5432                            # Default: 5432 for PostgreSQL, 3306 for MySQL
+  #
+  #   # Additional settings
+  #   autoMinorVersionUpgrade: true          # Auto upgrade minor versions
+  #   copyTagsToSnapshot: true              # Copy tags to snapshots
+  #
+  #   # Custom tags
+  #   tags:
+  #     application: my-app
+  #     backup: "true"
+  #
+  #   # Automatic credential sync to AWS Secrets Manager (recommended)
+  #   # This pushes DB credentials to Secrets Manager so apps can pull them via External Secrets
+  #   # Developers never see the actual passwords
+  #   syncToSecretsManager:
+  #     enabled: true                            # Enable automatic sync to Secrets Manager
+  #     secretStoreRef: secretstore              # ClusterSecretStore name (default: secretstore)
+  #     secretStoreKind: ClusterSecretStore      # Kind of secret store
+  #     remoteKeyPrefix: qa/my-app-db            # OPTIONAL - Secrets Manager path
+  #                                              # Default: {environment}/{cluster-name}
+  #                                              # Example: If name=my-db-qa and env=qa, path will be qa/my-db-qa
+  #     createExternalSecretForApps: true        # Create ExternalSecret for apps to use
+  #     appNamespace: default                    # Namespace where app ExternalSecret will be created
