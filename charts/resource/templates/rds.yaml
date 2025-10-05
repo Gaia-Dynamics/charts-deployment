@@ -1,31 +1,10 @@
 {{- if and .Values.rds .Values.rds.clusters }}
 {{- range .Values.rds.clusters }}
----
-# Auto-generated password secret (if not provided)
-{{- if not .masterUserPasswordSecretRef }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .name }}-password
-  namespace: {{ $.Values.global.namespace | default "crossplane-system" }}
-  labels:
-    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
-    app.kubernetes.io/name: {{ .name }}
-    app.kubernetes.io/managed-by: crossplane
-    environment: {{ $.Values.global.environment }}
-type: Opaque
-data:
-  # Generate random 32-character password using Helm's randAlphaNum
-  # This will be generated once and persisted
-  password: {{ randAlphaNum 32 | b64enc | quote }}
-
----
-{{- end }}
 
 {{- if not .vpcSecurityGroupIds }}
 ---
 # Auto-created Security Group for RDS
-apiVersion: ec2.aws.crossplane.io/v1beta1
+apiVersion: ec2.aws.upbound.io/v1beta1
 kind: SecurityGroup
 metadata:
   name: {{ .name }}-sg
@@ -39,7 +18,7 @@ spec:
   forProvider:
     region: {{ $.Values.global.region }}
     description: {{ printf "Security group for %s Aurora cluster" .name }}
-    groupName: {{ .name }}-sg
+    name: {{ .name }}-sg
     {{- if .vpcId }}
     vpcId: {{ .vpcId }}
     {{- else if eq $.Values.global.environment "qa" }}
@@ -50,21 +29,23 @@ spec:
       {{- fail "vpcId required when auto-creating security group or provide vpcSecurityGroupIds" }}
     {{- end }}
     tags:
-      - key: Name
-        value: {{ .name }}-sg
-      - key: Environment
-        value: {{ $.Values.global.environment }}
-      - key: ManagedBy
-        value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Name: {{ .name }}-sg
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
+      {{- range $key, $value := .tags }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 
 ---
-# Security Group Rule - Allow PostgreSQL from app security group
-apiVersion: ec2.aws.crossplane.io/v1beta1
-kind: SecurityGroupRule
+# Security Group Rule - Allow PostgreSQL/MySQL from app security group
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupIngressRule
 metadata:
-  name: {{ .name }}-sg-rule-postgres
+  name: {{ .name }}-sg-rule
   labels:
     helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     app.kubernetes.io/name: {{ .name }}
@@ -74,18 +55,17 @@ spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
     region: {{ $.Values.global.region }}
-    type: ingress
-    description: {{ printf "Allow PostgreSQL access to %s from application" .name }}
+    description: {{ printf "Allow database access to %s from application" .name }}
     fromPort: {{ .port | default 5432 }}
     toPort: {{ .port | default 5432 }}
-    protocol: tcp
+    ipProtocol: tcp
     securityGroupIdSelector:
       matchLabels:
         app.kubernetes.io/name: {{ .name }}
     {{- if eq $.Values.global.environment "qa" }}
-    sourceSecurityGroupId: sg-023605daa63299b42  # QA app security group
+    referencedSecurityGroupId: sg-023605daa63299b42
     {{- else if eq $.Values.global.environment "prod" }}
-    sourceSecurityGroupId: sg-004477da6d81e6cdf  # Prod app security group
+    referencedSecurityGroupId: sg-004477da6d81e6cdf
     {{- else }}
       {{- fail "Unknown environment - cannot determine source security group" }}
     {{- end }}
@@ -95,9 +75,9 @@ spec:
 {{- end }}
 
 ---
-# DB Subnet Group - Required for RDS in VPC
-apiVersion: rds.aws.crossplane.io/v1alpha1
-kind: DBSubnetGroup
+# DB Subnet Group
+apiVersion: rds.aws.upbound.io/v1beta2
+kind: SubnetGroup
 metadata:
   name: {{ .name }}-subnet-group
   labels:
@@ -127,27 +107,21 @@ spec:
       {{- fail "subnetIds is required for RDS cluster or use qa/prod environment" }}
     {{- end }}
     tags:
-      - key: Name
-        value: {{ .name }}-subnet-group
-      - key: Environment
-        value: {{ $.Values.global.environment }}
-      - key: ManagedBy
-        value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
-      - key: Department
-        value: {{ $.Values.global.tags.department | default "engineering" }}
-      - key: Service
-        value: {{ $.Values.global.tags.service | default "gaia" }}
+      Name: {{ .name }}-subnet-group
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
       {{- range $key, $value := .tags }}
-      - key: {{ $key }}
-        value: {{ $value | quote }}
+      {{ $key }}: {{ $value | quote }}
       {{- end }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 
 ---
 # DB Cluster Parameter Group
-apiVersion: rds.aws.crossplane.io/v1alpha1
-kind: DBClusterParameterGroup
+apiVersion: rds.aws.upbound.io/v1beta2
+kind: ClusterParameterGroup
 metadata:
   name: {{ .name }}-cluster-params
   labels:
@@ -161,44 +135,38 @@ spec:
     region: {{ $.Values.global.region }}
     description: {{ printf "Cluster parameter group for %s" .name }}
     {{- if eq (.engine | default "aurora-postgresql") "aurora-postgresql" }}
-    dbParameterGroupFamily: {{ .parameterGroupFamily | default "aurora-postgresql16" }}
+    family: {{ .parameterGroupFamily | default "aurora-postgresql16" }}
     {{- else if eq .engine "aurora-mysql" }}
-    dbParameterGroupFamily: {{ .parameterGroupFamily | default "aurora-mysql8.0" }}
+    family: {{ .parameterGroupFamily | default "aurora-mysql8.0" }}
     {{- else }}
-    dbParameterGroupFamily: {{ .parameterGroupFamily }}
+    family: {{ .parameterGroupFamily }}
     {{- end }}
     {{- if .clusterParameters }}
-    parameters:
+    parameter:
     {{- range .clusterParameters }}
-      - parameterName: {{ .name }}
-        parameterValue: {{ .value | quote }}
+      - name: {{ .name }}
+        value: {{ .value | quote }}
         {{- if .applyMethod }}
         applyMethod: {{ .applyMethod }}
         {{- end }}
     {{- end }}
     {{- end }}
     tags:
-      - key: Name
-        value: {{ .name }}-cluster-params
-      - key: Environment
-        value: {{ $.Values.global.environment }}
-      - key: ManagedBy
-        value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
-      - key: Department
-        value: {{ $.Values.global.tags.department | default "engineering" }}
-      - key: Service
-        value: {{ $.Values.global.tags.service | default "gaia" }}
+      Name: {{ .name }}-cluster-params
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
       {{- range $key, $value := .tags }}
-      - key: {{ $key }}
-        value: {{ $value | quote }}
+      {{ $key }}: {{ $value | quote }}
       {{- end }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 
 ---
-# DB Parameter Group for instances
-apiVersion: rds.aws.crossplane.io/v1alpha1
-kind: DBParameterGroup
+# DB Parameter Group (for instances)
+apiVersion: rds.aws.upbound.io/v1beta2
+kind: ParameterGroup
 metadata:
   name: {{ .name }}-instance-params
   labels:
@@ -212,44 +180,38 @@ spec:
     region: {{ $.Values.global.region }}
     description: {{ printf "Instance parameter group for %s" .name }}
     {{- if eq (.engine | default "aurora-postgresql") "aurora-postgresql" }}
-    dbParameterGroupFamily: {{ .parameterGroupFamily | default "aurora-postgresql16" }}
+    family: {{ .parameterGroupFamily | default "aurora-postgresql16" }}
     {{- else if eq .engine "aurora-mysql" }}
-    dbParameterGroupFamily: {{ .parameterGroupFamily | default "aurora-mysql8.0" }}
+    family: {{ .parameterGroupFamily | default "aurora-mysql8.0" }}
     {{- else }}
-    dbParameterGroupFamily: {{ .parameterGroupFamily }}
+    family: {{ .parameterGroupFamily }}
     {{- end }}
     {{- if .instanceParameters }}
-    parameters:
+    parameter:
     {{- range .instanceParameters }}
-      - parameterName: {{ .name }}
-        parameterValue: {{ .value | quote }}
+      - name: {{ .name }}
+        value: {{ .value | quote }}
         {{- if .applyMethod }}
         applyMethod: {{ .applyMethod }}
         {{- end }}
     {{- end }}
     {{- end }}
     tags:
-      - key: Name
-        value: {{ .name }}-instance-params
-      - key: Environment
-        value: {{ $.Values.global.environment }}
-      - key: ManagedBy
-        value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
-      - key: Department
-        value: {{ $.Values.global.tags.department | default "engineering" }}
-      - key: Service
-        value: {{ $.Values.global.tags.service | default "gaia" }}
+      Name: {{ .name }}-instance-params
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
       {{- range $key, $value := .tags }}
-      - key: {{ $key }}
-        value: {{ $value | quote }}
+      {{ $key }}: {{ $value | quote }}
       {{- end }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 
 ---
 # Aurora DB Cluster
-apiVersion: rds.aws.crossplane.io/v1alpha1
-kind: DBCluster
+apiVersion: rds.aws.upbound.io/v1beta2
+kind: Cluster
 metadata:
   name: {{ .name }}
   labels:
@@ -257,8 +219,6 @@ metadata:
     app.kubernetes.io/name: {{ .name }}
     app.kubernetes.io/managed-by: crossplane
     environment: {{ $.Values.global.environment }}
-  annotations:
-    crossplane.io/external-name: {{ .name }}
 spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
@@ -279,22 +239,18 @@ spec:
     databaseName: {{ .databaseName | default "postgres" }}
     masterUsername: {{ .masterUsername | default "postgres" }}
 
-    {{- if .masterUserPasswordSecretRef }}
-    # Password from provided secret
-    masterUserPasswordSecretRef:
-      name: {{ .masterUserPasswordSecretRef.name }}
-      namespace: {{ .masterUserPasswordSecretRef.namespace | default "crossplane-system" }}
-      key: {{ .masterUserPasswordSecretRef.key | default "password" }}
-    {{- else }}
-    # Password from auto-generated secret
-    masterUserPasswordSecretRef:
-      name: {{ .name }}-password
+    # Auto-generate password and store in connection info secret
+    autoGeneratePassword: true
+    masterPasswordSecretRef:
+      name: {{ .name }}-connection-info
       namespace: {{ $.Values.global.namespace | default "crossplane-system" }}
       key: password
-    {{- end }}
 
     # Network configuration
-    dbSubnetGroupName: {{ .name }}-subnet-group
+    dbSubnetGroupNameSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+
     {{- if .vpcSecurityGroupIds }}
     vpcSecurityGroupIds:
     {{- range .vpcSecurityGroupIds }}
@@ -308,7 +264,9 @@ spec:
     {{- end }}
 
     # Parameter groups
-    dbClusterParameterGroupName: {{ .name }}-cluster-params
+    dbClusterParameterGroupNameSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
 
     # Backup configuration
     backupRetentionPeriod: {{ .backupRetentionPeriod | default 7 }}
@@ -319,7 +277,7 @@ spec:
     skipFinalSnapshot: {{ .skipFinalSnapshot }}
     {{- else }}
     skipFinalSnapshot: false
-    finalDBSnapshotIdentifier: {{ .name }}-final-snapshot
+    finalSnapshotIdentifier: {{ .name }}-final-snapshot
     {{- end }}
 
     # Storage encryption
@@ -332,20 +290,13 @@ spec:
 
     # Monitoring and logging
     {{- if .enableCloudwatchLogsExports }}
-    enableCloudwatchLogsExports:
+    enabledCloudwatchLogsExports:
     {{- range .enableCloudwatchLogsExports }}
       - {{ . }}
     {{- end }}
     {{- else if eq (.engine | default "aurora-postgresql") "aurora-postgresql" }}
-    enableCloudwatchLogsExports:
-      - postgresql
-    {{- end }}
-
-    {{- if .enabledCloudwatchLogsExports }}
     enabledCloudwatchLogsExports:
-    {{- range .enabledCloudwatchLogsExports }}
-      - {{ . }}
-    {{- end }}
+      - postgresql
     {{- end }}
 
     # Availability
@@ -356,40 +307,35 @@ spec:
     {{- end }}
     {{- end }}
 
-    # Performance Insights
-    {{- if .enablePerformanceInsights }}
-    enablePerformanceInsights: {{ .enablePerformanceInsights }}
-    {{- end }}
-
     # Deletion protection
     deletionProtection: {{ .deletionProtection | default false }}
 
     # Copy tags to snapshots
     copyTagsToSnapshot: {{ .copyTagsToSnapshot | default true }}
 
-    # Serverless v2 scaling (if engineMode is provisioned and using serverless instances)
+    # Serverless v2 scaling
     {{- if .serverlessV2ScalingConfiguration }}
-    serverlessV2ScalingConfiguration:
-      minCapacity: {{ .serverlessV2ScalingConfiguration.minCapacity | default 0.5 }}
-      maxCapacity: {{ .serverlessV2ScalingConfiguration.maxCapacity | default 1 }}
+    serverlessv2ScalingConfiguration:
+      - minCapacity: {{ .serverlessV2ScalingConfiguration.minCapacity | default 0.5 }}
+        maxCapacity: {{ .serverlessV2ScalingConfiguration.maxCapacity | default 1 }}
     {{- end }}
 
     # Tags
     tags:
-      - key: Name
-        value: {{ .name }}
-      - key: Environment
-        value: {{ $.Values.global.environment }}
-      - key: ManagedBy
-        value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
-      - key: Department
-        value: {{ $.Values.global.tags.department | default "engineering" }}
-      - key: Service
-        value: {{ $.Values.global.tags.service | default "gaia" }}
+      Name: {{ .name }}
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
       {{- range $key, $value := .tags }}
-      - key: {{ $key }}
-        value: {{ $value | quote }}
+      {{ $key }}: {{ $value | quote }}
       {{- end }}
+
+  # Write connection info to secret
+  writeConnectionSecretToRef:
+    name: {{ .name }}-connection-info
+    namespace: {{ $.Values.global.namespace | default "crossplane-system" }}
+
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 
@@ -398,8 +344,8 @@ spec:
 {{- range $index := until (int $instanceCount) }}
 ---
 # Aurora DB Instance {{ $index }}
-apiVersion: rds.aws.crossplane.io/v1alpha1
-kind: DBInstance
+apiVersion: rds.aws.upbound.io/v1beta2
+kind: ClusterInstance
 metadata:
   name: {{ $cluster.name }}-instance-{{ $index }}
   labels:
@@ -415,25 +361,26 @@ spec:
     region: {{ $.Values.global.region }}
 
     # Cluster association
-    dbClusterIdentifier: {{ $cluster.name }}
+    clusterIdentifierSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ $cluster.name }}
 
     # Engine
     engine: {{ $cluster.engine | default "aurora-postgresql" }}
 
     # Instance class
     {{- if $cluster.instanceClass }}
-    dbInstanceClass: {{ $cluster.instanceClass }}
+    instanceClass: {{ $cluster.instanceClass }}
     {{- else if eq ($cluster.instanceType | default "provisioned") "serverless" }}
-    dbInstanceClass: db.serverless
+    instanceClass: db.serverless
     {{- else }}
-    dbInstanceClass: db.t4g.medium
+    instanceClass: db.t4g.medium
     {{- end }}
 
-    # Instance identifier
-    dbInstanceIdentifier: {{ $cluster.name }}-instance-{{ $index }}
-
     # Parameter group
-    dbParameterGroupName: {{ $cluster.name }}-instance-params
+    dbParameterGroupNameSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ $cluster.name }}
 
     # Public accessibility
     publiclyAccessible: {{ $cluster.publiclyAccessible | default false }}
@@ -448,7 +395,7 @@ spec:
 
     # Performance Insights
     {{- if $cluster.enablePerformanceInsights }}
-    enablePerformanceInsights: {{ $cluster.enablePerformanceInsights }}
+    performanceInsightsEnabled: {{ $cluster.enablePerformanceInsights }}
     {{- if $cluster.performanceInsightsKmsKeyId }}
     performanceInsightsKmsKeyId: {{ $cluster.performanceInsightsKmsKeyId }}
     {{- end }}
@@ -466,7 +413,7 @@ spec:
     # Promotion tier (for failover priority)
     promotionTier: {{ $index }}
 
-    # Availability zone (optional, let AWS choose if not specified)
+    # Availability zone (optional)
     {{- if $cluster.availabilityZones }}
     {{- if lt $index (len $cluster.availabilityZones) }}
     availabilityZone: {{ index $cluster.availabilityZones $index }}
@@ -475,59 +422,24 @@ spec:
 
     # Tags
     tags:
-      - key: Name
-        value: {{ $cluster.name }}-instance-{{ $index }}
-      - key: Environment
-        value: {{ $.Values.global.environment }}
-      - key: ManagedBy
-        value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
-      - key: Department
-        value: {{ $.Values.global.tags.department | default "engineering" }}
-      - key: Service
-        value: {{ $.Values.global.tags.service | default "gaia" }}
-      - key: Cluster
-        value: {{ $cluster.name }}
-      - key: InstanceIndex
-        value: "{{ $index }}"
+      Name: {{ $cluster.name }}-instance-{{ $index }}
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
+      Cluster: {{ $cluster.name }}
+      InstanceIndex: "{{ $index }}"
       {{- range $key, $value := $cluster.tags }}
-      - key: {{ $key }}
-        value: {{ $value | quote }}
+      {{ $key }}: {{ $value | quote }}
       {{- end }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}
 
-{{- if .createSecret }}
----
-# Kubernetes Secret to store connection details
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .name }}-connection
-  namespace: {{ .secretNamespace | default "default" }}
-  labels:
-    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
-    app.kubernetes.io/name: {{ .name }}
-    app.kubernetes.io/managed-by: crossplane
-    environment: {{ $.Values.global.environment }}
-type: Opaque
-stringData:
-  host: {{ .name }}.cluster-{{ .customClusterSuffix | default "changeme" }}.{{ $.Values.global.region }}.rds.amazonaws.com
-  port: "{{ .port | default 5432 }}"
-  database: {{ .databaseName | default "postgres" }}
-  username: {{ .masterUsername | default "postgres" }}
-  # Note: Password should be retrieved from the secret specified in masterUserPasswordSecretRef
-  {{- if eq (.engine | default "aurora-postgresql") "aurora-postgresql" }}
-  engine: "postgresql"
-  {{- else if eq .engine "aurora-mysql" }}
-  engine: "mysql"
-  {{- end }}
-{{- end }}
-
 {{- if .createPolicy }}
 ---
 # IAM Policy for RDS access
-apiVersion: iam.aws.crossplane.io/v1beta1
+apiVersion: iam.aws.upbound.io/v1beta1
 kind: Policy
 metadata:
   name: {{ .name }}-rds-policy
@@ -541,7 +453,7 @@ spec:
   forProvider:
     name: {{ .name }}-rds-policy
     description: {{ printf "Policy for RDS cluster %s managed by Crossplane" .name }}
-    document: |
+    policy: |
       {
         "Version": "2012-10-17",
         "Statement": [
@@ -586,7 +498,7 @@ spec:
 {{- $cluster := . }}
 {{- range $index, $role := .attachToRoles }}
 ---
-apiVersion: iam.aws.crossplane.io/v1beta1
+apiVersion: iam.aws.upbound.io/v1beta1
 kind: RolePolicyAttachment
 metadata:
   name: {{ $cluster.name }}-role-attachment-{{ $index }}
@@ -599,8 +511,10 @@ metadata:
 spec:
   deletionPolicy: {{ $cluster.deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
-    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ $cluster.name }}-rds-policy
-    roleName: {{ $role }}
+    policyArnSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ $cluster.name }}
+    role: {{ $role }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}
