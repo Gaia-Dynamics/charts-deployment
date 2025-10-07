@@ -1,0 +1,115 @@
+{{- if and .Values.iam .Values.iam.roles }}
+{{- range .Values.iam.roles }}
+---
+# ============================================================================
+# IAM Role for IRSA (IAM Roles for Service Accounts)
+# ============================================================================
+# This role allows Kubernetes service accounts to assume AWS IAM permissions
+# using OIDC-based authentication (EKS IRSA)
+# ============================================================================
+
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: Role
+metadata:
+  name: {{ .name }}-{{ $.Values.global.environment }}
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    name: {{ .name }}-{{ $.Values.global.environment }}
+    description: {{ .description | default (printf "IAM role for %s service account" .name) }}
+
+    # Trust policy for EKS OIDC provider (IRSA)
+    assumeRolePolicy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Federated": "arn:aws:iam::{{ $.Values.global.accountId }}:oidc-provider/oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+              "StringEquals": {
+                "oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}:sub": "system:serviceaccount:{{ .namespace }}:{{ .serviceAccountName }}",
+                "oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}:aud": "sts.amazonaws.com"
+              }
+            }
+          }
+        ]
+      }
+
+    # Tags
+    tags:
+      Name: {{ .name }}-{{ $.Values.global.environment }}
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
+      {{- range $key, $value := .tags }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+
+{{- if .policies }}
+{{- $roleName := .name }}
+{{- $deletionPolicy := .deletionPolicy }}
+{{- range $index, $policyArn := .policies }}
+---
+# Attach managed policy to role
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: RolePolicyAttachment
+metadata:
+  name: {{ $roleName }}-{{ $.Values.global.environment }}-policy-{{ $index }}
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ $roleName }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ $deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    policyArn: {{ $policyArn }}
+    roleSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ $roleName }}
+        environment: {{ $.Values.global.environment }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+{{- end }}
+
+{{- if .inlinePolicy }}
+---
+# Inline policy for role
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: RolePolicy
+metadata:
+  name: {{ .name }}-{{ $.Values.global.environment }}-inline-policy
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    name: {{ .name }}-{{ $.Values.global.environment }}-policy
+    policy: {{ .inlinePolicy | toJson }}
+    roleSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+        environment: {{ $.Values.global.environment }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- end }}
+{{- end }}
