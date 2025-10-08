@@ -140,9 +140,11 @@ spec:
           - configMapRef:
               name: {{ $.Values.name }}
           {{- end }}
-          {{- if $.Values.env.secretName }}
+          {{- if $.Values.env.secrets }}
+          {{- range $index, $secret := $.Values.env.secrets }}
           - secretRef:
-              name: {{ $.Values.name }}
+              name: {{ $.Values.name }}-{{ $index }}
+          {{- end }}
           {{- end }}
           {{- end }}
         {{- if $.Values.livenessProbe }}

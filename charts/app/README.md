@@ -45,12 +45,16 @@ app:
         - "--option1"                         # Arg1 (Optional)
       deletionPolicy: HookSucceeded           # DeletionPolicy. Default: HookSucceeded
 
-  # Environment Variables (ConfigMap for public, Secret for private)
+  # Environment Variables (ConfigMap for public, Secrets for private)
   env:                                        # Env Object (Optional)
     public:                                   # Public Env vars Object
       DATABASE_URL: "db-url"                  # Env var Key <-> Value
       SECRET_KEY: "secret-key"                # Env var Key <-> Value
-    secretName: "[ENV]/[APP_NAME]"            # AWS Secrets Manager key to extract all secrets from (Optional)
+    secrets:                                  # Array of AWS Secrets Manager keys (Optional)
+      - "[ENV]/[APP_NAME]"                    # Primary secret (e.g., "qa/platform-api")
+      - "[ENV]/rds/[DB_NAME]"                 # Additional secret (e.g., "qa/rds/platform-db")
+      # Each secret creates a separate ExternalSecret resource
+      # All secrets are merged into the pod's environment variables
 
   livenessProbe:                              # Liveness Probe Object
     enabled: true                             # Enable the liveness probe
