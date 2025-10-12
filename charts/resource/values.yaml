@@ -42,6 +42,7 @@ rds:
   #   # - Security Group: Auto-created with access from:
   #   #   - QA: sg-023605daa63299b42
   #   #   - Prod: sg-004477da6d81e6cdf
+  #   # - Secret Keys: POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_HOST_READ_ONLY
   #
   # Full configuration example:
   # - name: my-aurora-cluster
@@ -56,6 +57,15 @@ rds:
   #     name: db-master-password             # If omitted, a random password is generated
   #     namespace: crossplane-system
   #     key: password
+  #
+  #   # Secret key customization (OPTIONAL - customize AWS Secrets Manager key names)
+  #   secretKeyNames:
+  #     host: DB_URL                         # Default: POSTGRES_HOST
+  #     port: DB_PORT                        # Default: POSTGRES_PORT
+  #     user: DB_USER                        # Default: POSTGRES_USER
+  #     password: DB_PASSWORD                # Default: POSTGRES_PASSWORD
+  #     database: DB_NAME                    # Default: POSTGRES_DB
+  #     readOnlyHost: DB_READ_REPLICA_URL    # Default: POSTGRES_HOST_READ_ONLY
   #
   #   # Network configuration (OPTIONAL - auto-configured based on environment)
   #   subnetIds:                             # OPTIONAL - Uses env defaults if omitted
