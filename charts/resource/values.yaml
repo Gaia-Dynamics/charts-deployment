@@ -2,6 +2,7 @@ global:
   environment: ""  # Will be set by ArgoCD (qa, prod, shared)
   accountId: ""    # Will be set by ArgoCD
   providerConfig: ""  # Will be set by ArgoCD
+  oidcProviderId: ""  # Will be set by ArgoCD
   region: us-east-2
   deletionPolicy: "Orphan"  # Will be set by ArgoCD (Delete for QA, Orphan for Prod)
   tags:
