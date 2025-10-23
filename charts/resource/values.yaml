@@ -67,6 +67,7 @@ rds:
   #     password: DB_PASSWORD                # Default: POSTGRES_PASSWORD
   #     database: DB_NAME                    # Default: POSTGRES_DB
   #     readOnlyHost: DB_READ_REPLICA_URL    # Default: POSTGRES_HOST_READ_ONLY
+  #     url: POSTGRES_URL                    # Optional: Full connection URI (postgresql+psycopg://user:pass@host:port/db)
   #
   #   # Network configuration (OPTIONAL - auto-configured based on environment)
   #   subnetIds:                             # OPTIONAL - Uses env defaults if omitted
