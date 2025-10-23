@@ -67,7 +67,15 @@ rds:
   #     password: DB_PASSWORD                # Default: POSTGRES_PASSWORD
   #     database: DB_NAME                    # Default: POSTGRES_DB
   #     readOnlyHost: DB_READ_REPLICA_URL    # Default: POSTGRES_HOST_READ_ONLY
-  #     url: POSTGRES_URL                    # Optional: Full connection URI (postgresql+psycopg://user:pass@host:port/db)
+  #     url: POSTGRES_URL                    # Optional: Single connection URI (postgresql+psycopg://user:pass@host:port/db)
+  #     # OR use 'urls' for multiple connection strings with different drivers/databases:
+  #     urls:
+  #       - name: PREFECT_API_DATABASE_CONNECTION_URL
+  #         driver: postgresql+asyncpg       # Default: postgresql+psycopg
+  #         database: prefect                # Default: uses cluster's databaseName
+  #       - name: POSTGRES_URL
+  #         driver: postgresql+psycopg
+  #         database: scraping_data
   #
   #   # Network configuration (OPTIONAL - auto-configured based on environment)
   #   subnetIds:                             # OPTIONAL - Uses env defaults if omitted
