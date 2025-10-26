@@ -67,4 +67,28 @@ spec:
             resources:
 {{ toYaml $.Values.resources | indent 14 }}
             {{- end }}
+            {{- if $.Values.configMaps }}
+            volumeMounts:
+            {{- range $configMap := $.Values.configMaps }}
+            - name: {{ $configMap.name }}
+              mountPath: {{ $configMap.mountPath }}
+              {{- if $configMap.subPath }}
+              subPath: {{ $configMap.subPath }}
+              {{- end }}
+              {{- if $configMap.readOnly }}
+              readOnly: {{ $configMap.readOnly }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- if $.Values.configMaps }}
+          volumes:
+          {{- range $configMap := $.Values.configMaps }}
+          - name: {{ $configMap.name }}
+            configMap:
+              name: {{ $.Values.name }}-{{ $configMap.name }}
+              {{- if $configMap.defaultMode }}
+              defaultMode: {{ $configMap.defaultMode }}
+              {{- end }}
+          {{- end }}
+          {{- end }}
 {{- end }}

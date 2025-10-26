@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.5.12
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.8.0
 
 ## Values Overview
 
@@ -55,6 +55,25 @@ app:
       - "[ENV]/rds/[DB_NAME]"                 # Additional secret (e.g., "qa/rds/platform-db")
       # Each secret creates a separate ExternalSecret resource
       # All secrets are merged into the pod's environment variables
+
+  # ConfigMaps (for file-based configuration)
+  configMaps:                                 # ConfigMaps Array of objects (Optional)
+    - name: nginx-config                      # (Required) Name of the ConfigMap
+      mountPath: /etc/nginx/conf.d            # (Required) Path where to mount the ConfigMap
+      subPath: ""                             # (Optional) Specific file to mount from ConfigMap
+      readOnly: true                          # (Optional, default: false) Mount as read-only
+      defaultMode: 0644                       # (Optional) File permissions in octal
+      data:                                   # (Required) ConfigMap data as key-value pairs
+        default.conf: |                       # File name and content
+          server {
+            listen 80;
+            server_name _;
+            location / {
+              return 200 "OK";
+            }
+          }
+        custom.conf: |                        # Another file
+          # Custom configuration here
 
   livenessProbe:                              # Liveness Probe Object
     enabled: true                             # Enable the liveness probe

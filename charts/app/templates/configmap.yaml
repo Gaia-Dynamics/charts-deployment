@@ -10,3 +10,21 @@ data:
     {{- end }}
 {{- end}}
 {{- end}}
+---
+{{- if $.Values.configMaps }}
+{{- range $configMap := $.Values.configMaps }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Values.name }}-{{ $configMap.name }}
+  labels:
+    app: {{ $.Values.name }}
+    env: {{ $.Values.environment }}
+data:
+  {{- range $key, $value := $configMap.data }}
+  {{ $key }}: |
+{{ $value | indent 4 }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
