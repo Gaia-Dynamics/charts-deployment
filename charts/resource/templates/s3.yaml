@@ -188,7 +188,38 @@ spec:
     {{- end }}
     
     {{- if .bucketPolicy }}
-    policy: {{ toJson .bucketPolicy | quote }}
+    policy:
+      version: {{ .bucketPolicy.Version | quote }}
+      statements:
+      {{- range .bucketPolicy.Statement }}
+        - sid: {{ .Sid | quote }}
+          effect: {{ .Effect }}
+          {{- if eq (printf "%T" .Principal) "string" }}
+          principal:
+            allowAnon: true
+          {{- else }}
+          principal:
+            {{- toYaml .Principal | nindent 12 }}
+          {{- end }}
+          {{- if eq (printf "%T" .Action) "string" }}
+          action:
+            - {{ .Action }}
+          {{- else }}
+          action:
+            {{- range .Action }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- if eq (printf "%T" .Resource) "string" }}
+          resource:
+            - {{ .Resource }}
+          {{- else }}
+          resource:
+            {{- range .Resource }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
     {{- end }}
 
     tagging:
