@@ -1,6 +1,5 @@
 {{- if $.Values.ingress -}}
 {{ $length := len $.Values.ingress }} {{ if gt $length 0 }}
-{{- range $v := $.Values.ingress }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -37,6 +36,7 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
+    {{- range $v := $.Values.ingress }}
     - host: {{ $v.domain }}
       http:
         paths:
@@ -49,6 +49,6 @@ spec:
                 port:
                   number: {{ $path.targetPort | default ($v.targetPort | default "8000") }}
           {{- end }}
-{{- end }}
+    {{- end }}
 {{- end }}
 {{- end }}
