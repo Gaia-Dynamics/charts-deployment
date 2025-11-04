@@ -16,10 +16,19 @@ spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
     locationConstraint: {{ $.Values.global.region }}
+
+    {{- if .objectOwnership }}
+    objectOwnership: {{ .objectOwnership }}
+    {{- else }}
+    objectOwnership: BucketOwnerEnforced
+    {{- end }}
+
+    {{- if and (not .objectOwnership) (ne (.objectOwnership | default "BucketOwnerEnforced") "BucketOwnerEnforced") }}
     {{- if .publicAccess }}
     acl: public-read
     {{- else }}
     acl: private
+    {{- end }}
     {{- end }}
 
     {{- if .enableVersioning }}
