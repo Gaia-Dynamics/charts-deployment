@@ -188,8 +188,7 @@ spec:
     {{- end }}
     
     {{- if .bucketPolicy }}
-    policy:
-      {{- toYaml .bucketPolicy | nindent 6 }}
+    policy: {{ toJson .bucketPolicy | quote }}
     {{- end }}
 
     tagging:
