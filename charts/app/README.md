@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.8.0
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.10.0
 
 ## Values Overview
 
@@ -188,4 +188,11 @@ app:
   service:                                    # Service object (Optional)
     ports:                                    # Array key
       - 80                                    # Ports to expose for the Service
+
+  # Linkerd Service Mesh Configuration
+  linkerd:                                    # Linkerd configuration (Optional)
+    enabled: true                             # Enable Linkerd sidecar injection
+    # When enabled, automatically injects Linkerd proxy sidecar into pods
+    # Provides automatic mTLS, observability metrics, and traffic management
+    # Metrics available: request rates, latencies, success rates, and more
 ```

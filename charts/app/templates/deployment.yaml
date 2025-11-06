@@ -20,6 +20,12 @@ spec:
       labels:
         app: {{ $.Values.name }}
         env: {{ $.Values.environment }}
+      {{- if $.Values.linkerd }}
+      {{- if $.Values.linkerd.enabled }}
+      annotations:
+        linkerd.io/inject: enabled
+      {{- end }}
+      {{- end }}
     spec:
       serviceAccountName: {{ $.Values.name }}
       {{- /* Legacy support for direct scheduling configuration */ -}}
