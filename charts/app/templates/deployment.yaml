@@ -20,12 +20,13 @@ spec:
       labels:
         app: {{ $.Values.name }}
         env: {{ $.Values.environment }}
-      {{- if $.Values.linkerd }}
-      {{- if $.Values.linkerd.enabled }}
       annotations:
+        kubectl.kubernetes.io/default-container: {{ $.Values.name }}
+        {{- if $.Values.linkerd }}
+        {{- if $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
-      {{- end }}
-      {{- end }}
+        {{- end }}
+        {{- end }}
     spec:
       serviceAccountName: {{ $.Values.name }}
       {{- /* Legacy support for direct scheduling configuration */ -}}
