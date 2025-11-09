@@ -25,6 +25,12 @@ spec:
         {{- if $.Values.linkerd }}
         {{- if $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
+        {{- if $.Values.linkerd.skipInboundPorts }}
+        config.linkerd.io/skip-inbound-ports: {{ join "," $.Values.linkerd.skipInboundPorts | quote }}
+        {{- end }}
+        {{- if $.Values.linkerd.skipOutboundPorts }}
+        config.linkerd.io/skip-outbound-ports: {{ join "," $.Values.linkerd.skipOutboundPorts | quote }}
+        {{- end }}
         {{- end }}
         {{- end }}
     spec:

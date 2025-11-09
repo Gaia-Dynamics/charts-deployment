@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.10.0
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.11.0
 
 ## Values Overview
 
@@ -192,7 +192,13 @@ app:
   # Linkerd Service Mesh Configuration
   linkerd:                                    # Linkerd configuration (Optional)
     enabled: true                             # Enable Linkerd sidecar injection
+    skipInboundPorts:                         # (Optional) Ports to skip HTTP protocol detection (treat as opaque TCP)
+      - "3000"                                # Skip Linkerd HTTP parsing on port 3000
+      - "8080"                                # Add more ports as needed
+    skipOutboundPorts:                        # (Optional) Outbound ports to skip protocol detection
+      - "3306"                                # Example: MySQL port
     # When enabled, automatically injects Linkerd proxy sidecar into pods
     # Provides automatic mTLS, observability metrics, and traffic management
     # Metrics available: request rates, latencies, success rates, and more
+    # Use skipInboundPorts for apps with non-standard HTTP (e.g., Next.js with 304 responses)
 ```
