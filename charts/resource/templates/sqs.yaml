@@ -1,7 +1,8 @@
 {{- if and .Values.sqs .Values.sqs.queues }}
 {{- range .Values.sqs.queues }}
 ---
-apiVersion: sqs.aws.crossplane.io/v1beta1
+# SQS Queue (Upbound Provider)
+apiVersion: sqs.aws.upbound.io/v1beta1
 kind: Queue
 metadata:
   name: {{ .name }}
@@ -19,19 +20,21 @@ spec:
 
     {{- if .fifo }}
     fifoQueue: true
-    contentBasedDeduplication: {{ .contentBasedDeduplication | default false }}
+    {{- if .contentBasedDeduplication }}
+    contentBasedDeduplication: {{ .contentBasedDeduplication }}
+    {{- end }}
     {{- end }}
 
     {{- if .visibilityTimeout }}
-    visibilityTimeout: {{ .visibilityTimeout }}
+    visibilityTimeoutSeconds: {{ .visibilityTimeout }}
     {{- end }}
 
     {{- if .messageRetentionPeriod }}
-    messageRetentionPeriod: {{ .messageRetentionPeriod }}
+    messageRetentionSeconds: {{ .messageRetentionPeriod }}
     {{- end }}
 
     {{- if .maximumMessageSize }}
-    maximumMessageSize: {{ .maximumMessageSize }}
+    maxMessageSize: {{ .maximumMessageSize }}
     {{- end }}
 
     {{- if .delaySeconds }}
@@ -39,19 +42,21 @@ spec:
     {{- end }}
 
     {{- if .receiveMessageWaitTimeSeconds }}
-    receiveMessageWaitTimeSeconds: {{ .receiveMessageWaitTimeSeconds }}
+    receiveWaitTimeSeconds: {{ .receiveMessageWaitTimeSeconds }}
     {{- end }}
 
     {{- if .redrivePolicy }}
-    redrivePolicy:
-      {{- if .redrivePolicy.deadLetterTargetArn }}
-      deadLetterTargetArn: {{ .redrivePolicy.deadLetterTargetArn | quote }}
-      {{- else if .redrivePolicy.deadLetterQueueName }}
-      deadLetterTargetArn: "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ .redrivePolicy.deadLetterQueueName }}"
-      {{- else }}
-      {{- fail "redrivePolicy requires either deadLetterTargetArn or deadLetterQueueName with global.region and global.accountId" }}
-      {{- end }}
-      maxReceiveCount: {{ .redrivePolicy.maxReceiveCount | default 3 }}
+    redrivePolicy: |
+      {
+        {{- if .redrivePolicy.deadLetterTargetArn }}
+        "deadLetterTargetArn": {{ .redrivePolicy.deadLetterTargetArn | quote }},
+        {{- else if .redrivePolicy.deadLetterQueueName }}
+        "deadLetterTargetArn": "arn:aws:sqs:{{ $.Values.global.region }}:{{ $.Values.global.accountId }}:{{ .redrivePolicy.deadLetterQueueName }}",
+        {{- else }}
+        {{- fail "redrivePolicy requires either deadLetterTargetArn or deadLetterQueueName with global.region and global.accountId" }}
+        {{- end }}
+        "maxReceiveCount": {{ .redrivePolicy.maxReceiveCount | default 3 }}
+      }
     {{- end }}
 
     {{- if .kmsMasterKeyId }}
@@ -63,7 +68,7 @@ spec:
     {{- end }}
 
     {{- if .sseEnabled }}
-    sseEnabled: {{ .sseEnabled }}
+    sqsManagedSseEnabled: {{ .sseEnabled }}
     {{- end }}
 
     {{- if .policy }}
@@ -85,7 +90,8 @@ spec:
 
 {{- if .createPolicy }}
 ---
-apiVersion: iam.aws.crossplane.io/v1beta1
+# IAM Policy for SQS Queue Access
+apiVersion: iam.aws.upbound.io/v1beta1
 kind: Policy
 metadata:
   name: {{ .name }}-policy
@@ -95,10 +101,11 @@ metadata:
     app.kubernetes.io/managed-by: crossplane
     environment: {{ $.Values.global.environment }}
 spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
     name: {{ .name }}-policy
     description: {{ printf "Policy for SQS queue %s managed by Crossplane" .name }}
-    document: |
+    policy: |
       {
         "Version": "2012-10-17",
         "Statement": [
@@ -137,7 +144,8 @@ spec:
 {{- $queue := . }}
 {{- range $index, $role := .attachToRoles }}
 ---
-apiVersion: iam.aws.crossplane.io/v1beta1
+# IAM Role Policy Attachment
+apiVersion: iam.aws.upbound.io/v1beta1
 kind: RolePolicyAttachment
 metadata:
   name: {{ $queue.name }}-role-attachment-{{ $index }}
@@ -148,9 +156,12 @@ metadata:
     environment: {{ $.Values.global.environment }}
     purpose: irsa-attachment
 spec:
+  deletionPolicy: {{ $queue.deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
-    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ $queue.name }}-policy
-    roleName: {{ $role }}
+    policyArnSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ $queue.name }}
+    role: {{ $role }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}

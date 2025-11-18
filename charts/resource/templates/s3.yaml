@@ -1,7 +1,8 @@
 {{- if and .Values.s3 .Values.s3.buckets }}
 {{- range .Values.s3.buckets }}
 ---
-apiVersion: s3.aws.crossplane.io/v1beta1
+# S3 Bucket (Upbound Provider)
+apiVersion: s3.aws.upbound.io/v1beta1
 kind: Bucket
 metadata:
   name: {{ .name }}
@@ -15,235 +16,393 @@ metadata:
 spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
-    locationConstraint: {{ $.Values.global.region }}
-
-    {{- if .objectOwnership }}
-    objectOwnership: {{ .objectOwnership }}
-    {{- else }}
-    objectOwnership: BucketOwnerEnforced
-    {{- end }}
-
-    {{- if and (not .objectOwnership) (ne (.objectOwnership | default "BucketOwnerEnforced") "BucketOwnerEnforced") }}
-    {{- if .publicAccess }}
-    acl: public-read
-    {{- else }}
-    acl: private
-    {{- end }}
-    {{- end }}
-
-    {{- if .enableVersioning }}
-    versioningConfiguration:
-      status: Enabled
-    {{- end }}
-
-    {{- if .enableAcceleration }}
-    accelerateConfiguration:
-      status: Enabled
-    {{- end }}
-
-    {{- if .objectLockEnabled }}
-    objectLockEnabledForBucket: true
-    {{- end }}
-
-    {{- if not .publicAccess }}
-    publicAccessBlockConfiguration:
-      blockPublicAcls: true
-      blockPublicPolicy: true
-      ignorePublicAcls: true
-      restrictPublicBuckets: true
-    {{- else }}
-    publicAccessBlockConfiguration:
-      blockPublicAcls: false
-      blockPublicPolicy: false
-      ignorePublicAcls: false
-      restrictPublicBuckets: false
-    {{- end }}
-
-    {{- if .enableEncryption }}
-    serverSideEncryptionConfiguration:
-      rules:
-        - applyServerSideEncryptionByDefault:
-            sseAlgorithm: AES256
-    {{- end }}
-
-    {{- if .websiteConfiguration }}
-    websiteConfiguration:
-      {{- if .websiteConfiguration.errorDocument }}
-      errorDocument:
-        key: {{ .websiteConfiguration.errorDocument | quote }}
+    region: {{ $.Values.global.region }}
+    tags:
+      Name: {{ .name }}
+      Environment: {{ $.Values.global.environment }}
+      ManagedBy: {{ $.Values.global.tags.managedBy | default "crossplane" }}
+      Department: {{ $.Values.global.tags.department | default "engineering" }}
+      Service: {{ $.Values.global.tags.service | default "gaia" }}
+      {{- range $key, $value := .tags }}
+      {{ $key }}: {{ $value | quote }}
       {{- end }}
-      {{- if .websiteConfiguration.indexDocument }}
-      indexDocument:
-        suffix: {{ .websiteConfiguration.indexDocument | quote }}
-      {{- end }}
-    {{- end }}
-
-    {{- if .corsRules }}
-    corsConfiguration:
-      corsRules:
-      {{- range .corsRules }}
-        - allowedMethods:
-          {{- range .allowedMethods }}
-          - {{ . }}
-          {{- end }}
-          allowedOrigins:
-          {{- range .allowedOrigins }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- if .allowedHeaders }}
-          allowedHeaders:
-          {{- range .allowedHeaders }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- end }}
-          {{- if .exposeHeaders }}
-          exposeHeaders:
-          {{- range .exposeHeaders }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- end }}
-          {{- if .maxAgeSeconds }}
-          maxAgeSeconds: {{ .maxAgeSeconds }}
-          {{- end }}
-      {{- end }}
-    {{- end }}
-
-    {{- if .lifecycleRules }}
-    lifecycleConfiguration:
-      rules:
-      {{- range .lifecycleRules }}
-        - status: {{ .status | default "Enabled" }}
-          {{- if .id }}
-          id: {{ .id | quote }}
-          {{- end }}
-          {{- if .prefix }}
-          filter:
-            prefix: {{ .prefix }}
-          {{- end }}
-          {{- if .expiration }}
-          expiration:
-            {{- if .expiration.days }}
-            days: {{ .expiration.days }}
-            {{- end }}
-            {{- if .expiration.expiredObjectDeleteMarker }}
-            expiredObjectDeleteMarker: {{ .expiration.expiredObjectDeleteMarker }}
-            {{- end }}
-          {{- end }}
-          {{- if .transitions }}
-          transitions:
-          {{- range .transitions }}
-            - storageClass: {{ .storageClass }}
-              days: {{ .days }}
-          {{- end }}
-          {{- end }}
-      {{- end }}
-    {{- end }}
-
-    {{- if .notificationConfiguration }}
-    notificationConfiguration:
-      {{- if .notificationConfiguration.lambdaFunctionConfigurations }}
-      lambdaFunctionConfigurations:
-      {{- range .notificationConfiguration.lambdaFunctionConfigurations }}
-        - lambdaFunctionArn: {{ printf "arn:aws:lambda:%s:%s:function:%s" $.Values.global.region $.Values.global.accountId .functionName | quote }}
-          events:
-          {{- range .events }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- if .filter }}
-          filter:
-            {{- toYaml .filter | nindent 12 }}
-          {{- end }}
-      {{- end }}
-      {{- end }}
-
-      {{- if .notificationConfiguration.queueConfigurations }}
-      queueConfigurations:
-      {{- range .notificationConfiguration.queueConfigurations }}
-        - queueArn: {{ printf "arn:aws:sqs:%s:%s:%s" $.Values.global.region $.Values.global.accountId .queueName | quote }}
-          events:
-          {{- range .events }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- if .filter }}
-          filter:
-            {{- toYaml .filter | nindent 12 }}
-          {{- end }}
-      {{- end }}
-      {{- end }}
-
-      {{- if .notificationConfiguration.topicConfigurations }}
-      topicConfigurations:
-      {{- range .notificationConfiguration.topicConfigurations }}
-        - topicArn: {{ printf "arn:aws:sns:%s:%s:%s" $.Values.global.region $.Values.global.accountId .topicName | quote }}
-          events:
-          {{- range .events }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- if .filter }}
-          filter:
-            {{- toYaml .filter | nindent 12 }}
-          {{- end }}
-      {{- end }}
-      {{- end }}
-    {{- end }}
-    
-    {{- if .bucketPolicy }}
-    policy:
-      version: {{ .bucketPolicy.Version | quote }}
-      statements:
-      {{- range .bucketPolicy.Statement }}
-        - sid: {{ .Sid | quote }}
-          effect: {{ .Effect }}
-          {{- if eq (printf "%T" .Principal) "string" }}
-          principal:
-            allowAnon: true
-          {{- else }}
-          principal:
-            {{- toYaml .Principal | nindent 12 }}
-          {{- end }}
-          {{- if eq (printf "%T" .Action) "string" }}
-          action:
-            - {{ .Action }}
-          {{- else }}
-          action:
-            {{- range .Action }}
-            - {{ . }}
-            {{- end }}
-          {{- end }}
-          {{- if eq (printf "%T" .Resource) "string" }}
-          resource:
-            - {{ .Resource }}
-          {{- else }}
-          resource:
-            {{- range .Resource }}
-            - {{ . }}
-            {{- end }}
-          {{- end }}
-      {{- end }}
-    {{- end }}
-
-    tagging:
-      tagSet:
-        - key: Name
-          value: {{ .name }}
-        - key: Environment
-          value: {{ $.Values.global.environment }}
-        - key: ManagedBy
-          value: {{ $.Values.global.tags.managedBy | default "crossplane" }}
-        - key: Department
-          value: {{ $.Values.global.tags.department | default "engineering" }}
-        - key: Service
-          value: {{ $.Values.global.tags.service | default "gaia" }}
-        {{- range $key, $value := .tags }}
-        - key: {{ $key }}
-          value: {{ $value | quote }}
-        {{- end }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 
+{{- if not .publicAccess }}
+---
+# S3 Bucket Public Access Block
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketPublicAccessBlock
+metadata:
+  name: {{ .name }}-public-access-block
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    blockPublicAcls: true
+    blockPublicPolicy: true
+    ignorePublicAcls: true
+    restrictPublicBuckets: true
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .enableVersioning }}
+---
+# S3 Bucket Versioning
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketVersioning
+metadata:
+  name: {{ .name }}-versioning
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    versioningConfiguration:
+      - status: Enabled
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .enableEncryption }}
+---
+# S3 Bucket Server Side Encryption
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketServerSideEncryptionConfiguration
+metadata:
+  name: {{ .name }}-encryption
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    rule:
+      - applyServerSideEncryptionByDefault:
+          - sseAlgorithm: AES256
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .enableAcceleration }}
+---
+# S3 Bucket Acceleration Configuration
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketAccelerateConfiguration
+metadata:
+  name: {{ .name }}-acceleration
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    status: Enabled
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .objectLockEnabled }}
+---
+# S3 Bucket Object Lock Configuration
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketObjectLockConfiguration
+metadata:
+  name: {{ .name }}-object-lock
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    objectLockEnabled: Enabled
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .objectOwnership }}
+---
+# S3 Bucket Ownership Controls
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketOwnershipControls
+metadata:
+  name: {{ .name }}-ownership
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    rule:
+      - objectOwnership: {{ .objectOwnership }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .corsRules }}
+---
+# S3 Bucket CORS Configuration
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketCorsConfiguration
+metadata:
+  name: {{ .name }}-cors
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    corsRule:
+    {{- range .corsRules }}
+      - allowedMethods:
+        {{- range .allowedMethods }}
+        - {{ . }}
+        {{- end }}
+        allowedOrigins:
+        {{- range .allowedOrigins }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- if .allowedHeaders }}
+        allowedHeaders:
+        {{- range .allowedHeaders }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .exposeHeaders }}
+        exposeHeaders:
+        {{- range .exposeHeaders }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .maxAgeSeconds }}
+        maxAgeSeconds: {{ .maxAgeSeconds }}
+        {{- end }}
+    {{- end }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .lifecycleRules }}
+---
+# S3 Bucket Lifecycle Configuration
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketLifecycleConfiguration
+metadata:
+  name: {{ .name }}-lifecycle
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    rule:
+    {{- range .lifecycleRules }}
+      - status: {{ .status | default "Enabled" }}
+        {{- if .id }}
+        id: {{ .id | quote }}
+        {{- end }}
+        {{- if .prefix }}
+        filter:
+          - prefix: {{ .prefix }}
+        {{- end }}
+        {{- if .expiration }}
+        expiration:
+          {{- if .expiration.days }}
+          - days: {{ .expiration.days }}
+          {{- end }}
+          {{- if .expiration.expiredObjectDeleteMarker }}
+            expiredObjectDeleteMarker: {{ .expiration.expiredObjectDeleteMarker }}
+          {{- end }}
+        {{- end }}
+        {{- if .transitions }}
+        transition:
+        {{- range .transitions }}
+          - storageClass: {{ .storageClass }}
+            days: {{ .days }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .websiteConfiguration }}
+---
+# S3 Bucket Website Configuration
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketWebsiteConfiguration
+metadata:
+  name: {{ .name }}-website
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    {{- if .websiteConfiguration.errorDocument }}
+    errorDocument:
+      - key: {{ .websiteConfiguration.errorDocument | quote }}
+    {{- end }}
+    {{- if .websiteConfiguration.indexDocument }}
+    indexDocument:
+      - suffix: {{ .websiteConfiguration.indexDocument | quote }}
+    {{- end }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .notificationConfiguration }}
+---
+# S3 Bucket Notification Configuration
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketNotification
+metadata:
+  name: {{ .name }}-notification
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    {{- if .notificationConfiguration.lambdaFunctionConfigurations }}
+    lambdaFunction:
+    {{- range .notificationConfiguration.lambdaFunctionConfigurations }}
+      - lambdaFunctionArn: {{ printf "arn:aws:lambda:%s:%s:function:%s" $.Values.global.region $.Values.global.accountId .functionName | quote }}
+        events:
+        {{- range .events }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- if .filter }}
+        filterPrefix: {{ .filter.prefix | default "" }}
+        filterSuffix: {{ .filter.suffix | default "" }}
+        {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .notificationConfiguration.queueConfigurations }}
+    queue:
+    {{- range .notificationConfiguration.queueConfigurations }}
+      - queueArn: {{ printf "arn:aws:sqs:%s:%s:%s" $.Values.global.region $.Values.global.accountId .queueName | quote }}
+        events:
+        {{- range .events }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- if .filter }}
+        filterPrefix: {{ .filter.prefix | default "" }}
+        filterSuffix: {{ .filter.suffix | default "" }}
+        {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .notificationConfiguration.topicConfigurations }}
+    topic:
+    {{- range .notificationConfiguration.topicConfigurations }}
+      - topicArn: {{ printf "arn:aws:sns:%s:%s:%s" $.Values.global.region $.Values.global.accountId .topicName | quote }}
+        events:
+        {{- range .events }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- if .filter }}
+        filterPrefix: {{ .filter.prefix | default "" }}
+        filterSuffix: {{ .filter.suffix | default "" }}
+        {{- end }}
+    {{- end }}
+    {{- end }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
+{{- if .bucketPolicy }}
+---
+# S3 Bucket Policy
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketPolicy
+metadata:
+  name: {{ .name }}-policy-doc
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    region: {{ $.Values.global.region }}
+    bucketSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ .name }}
+    policy: {{ .bucketPolicy | toJson | quote }}
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+{{- end }}
+
 {{- if .createPolicy }}
 ---
-apiVersion: iam.aws.crossplane.io/v1beta1
+# IAM Policy for S3 Bucket Access
+apiVersion: iam.aws.upbound.io/v1beta1
 kind: Policy
 metadata:
   name: {{ .name }}-policy
@@ -253,10 +412,11 @@ metadata:
     app.kubernetes.io/managed-by: crossplane
     environment: {{ $.Values.global.environment }}
 spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
     name: {{ .name }}-policy
     description: {{ printf "Policy for S3 bucket %s managed by Crossplane" .name }}
-    document: |
+    policy: |
       {
         "Version": "2012-10-17",
         "Statement": [
@@ -293,7 +453,8 @@ spec:
 {{- $bucket := . }}
 {{- range $index, $role := .attachToRoles }}
 ---
-apiVersion: iam.aws.crossplane.io/v1beta1
+# IAM Role Policy Attachment
+apiVersion: iam.aws.upbound.io/v1beta1
 kind: RolePolicyAttachment
 metadata:
   name: {{ $bucket.name }}-role-attachment-{{ $index }}
@@ -304,9 +465,12 @@ metadata:
     environment: {{ $.Values.global.environment }}
     purpose: irsa-attachment
 spec:
+  deletionPolicy: {{ $bucket.deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
-    policyArn: arn:aws:iam::{{ $.Values.global.accountId }}:policy/{{ $bucket.name }}-policy
-    roleName: {{ $role }}
+    policyArnSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ $bucket.name }}
+    role: {{ $role }}
   providerConfigRef:
     name: {{ $.Values.global.providerConfig }}
 {{- end }}
