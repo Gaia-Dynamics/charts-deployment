@@ -17,6 +17,7 @@ spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
     region: {{ $.Values.global.region }}
+    name: {{ .name }}
 
     {{- if .fifo }}
     fifoQueue: true
