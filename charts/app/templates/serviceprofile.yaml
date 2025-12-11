@@ -1,0 +1,31 @@
+{{- if $.Values.serviceProfile -}}
+{{- if $.Values.serviceProfile.enabled -}}
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: {{ $.Values.name }}.{{ $.Release.Namespace }}.svc.cluster.local
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Values.name }}
+    env: {{ $.Values.environment }}
+spec:
+  routes:
+  {{- range $route := $.Values.serviceProfile.routes }}
+  - name: {{ $route.name }}
+    {{- if eq $route.type "exact" }}
+    condition:
+      method: {{ $route.method | default "GET" }}
+      pathRegex: {{ $route.path | quote }}
+    {{- else if eq $route.type "prefix" }}
+    condition:
+      method: {{ $route.method | default "GET" }}
+      pathRegex: {{ printf "^%s.*" $route.path | quote }}
+    {{- else if eq $route.type "regex" }}
+    condition:
+      method: {{ $route.method | default "GET" }}
+      pathRegex: {{ $route.path | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
