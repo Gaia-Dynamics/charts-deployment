@@ -11,10 +11,9 @@ metadata:
     env: {{ $.Values.environment }}
 spec:
   parentRefs:
-  - name: {{ $.Values.name }}
-    kind: Service
-    group: core
-    port: {{ index $.Values.service.ports 0 }}
+  - name: {{ $.Values.name }}-server
+    kind: Server
+    group: policy.linkerd.io
   rules:
   {{- if eq $route.type "exact" }}
   - matches:
