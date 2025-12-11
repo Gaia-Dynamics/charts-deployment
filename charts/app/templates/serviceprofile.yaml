@@ -13,19 +13,17 @@ spec:
   routes:
   {{- range $route := $.Values.serviceProfile.routes }}
   - name: {{ $route.name }}
-    {{- if eq $route.type "exact" }}
     condition:
-      method: {{ $route.method | default "GET" }}
-      pathRegex: {{ $route.path | quote }}
-    {{- else if eq $route.type "prefix" }}
-    condition:
-      method: {{ $route.method | default "GET" }}
+      {{- if $route.method }}
+      method: {{ $route.method }}
+      {{- end }}
+      {{- if eq $route.type "exact" }}
+      pathRegex: {{ printf "^%s$" $route.path | quote }}
+      {{- else if eq $route.type "prefix" }}
       pathRegex: {{ printf "^%s.*" $route.path | quote }}
-    {{- else if eq $route.type "regex" }}
-    condition:
-      method: {{ $route.method | default "GET" }}
+      {{- else if eq $route.type "regex" }}
       pathRegex: {{ $route.path | quote }}
-    {{- end }}
+      {{- end }}
   {{- end }}
 {{- end }}
 {{- end }}
