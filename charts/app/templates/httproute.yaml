@@ -9,9 +9,9 @@ metadata:
     env: {{ $.Values.environment }}
 spec:
   parentRefs:
-  - name: {{ $.Values.name }}
-    kind: Service
-    group: ""
+  - name: {{ $.Values.name }}-server
+    kind: Server
+    group: policy.linkerd.io
     port: {{ index $.Values.service.ports 0 }}
   rules:
   {{- range $route := $.Values.httpRoutes.routes }}
