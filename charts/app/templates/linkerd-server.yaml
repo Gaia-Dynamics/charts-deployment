@@ -1,7 +1,7 @@
 {{- if and $.Values.linkerd $.Values.linkerd.enabled }}
 {{- if and $.Values.httpRoutes $.Values.httpRoutes.enabled }}
 ---
-apiVersion: policy.linkerd.io/v1beta3
+apiVersion: policy.linkerd.io/v1beta1
 kind: Server
 metadata:
   name: {{ $.Values.name }}-server
