@@ -1,9 +1,11 @@
 {{- if $.Values.httpRoutes -}}
 {{- if $.Values.httpRoutes.enabled -}}
+{{- range $index, $route := $.Values.httpRoutes.routes }}
+---
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
-  name: {{ $.Values.name }}-routes
+  name: {{ $.Values.name }}-{{ $route.name | default (printf "route-%d" $index) }}
   labels:
     app: {{ $.Values.name }}
     env: {{ $.Values.environment }}
@@ -13,7 +15,6 @@ spec:
     kind: Server
     group: policy.linkerd.io
   rules:
-  {{- range $route := $.Values.httpRoutes.routes }}
   {{- if eq $route.type "exact" }}
   - matches:
     - path:
@@ -39,6 +40,6 @@ spec:
       method: {{ $route.method }}
       {{- end }}
   {{- end }}
-  {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
