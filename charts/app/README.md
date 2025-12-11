@@ -95,6 +95,21 @@ app:
     timeoutSeconds: 3                         # Time out limit in seconds
     failureThreshold: 3                       # Threshold for failure
 
+  # HTTPRoute Configuration (for Linkerd per-path metrics)
+  httpRoutes:                                 # HTTPRoute Configuration Object (Optional)
+    enabled: true                             # Enable HTTPRoute generation
+    routes:                                   # Array of route definitions
+      - path: /api/v1/users                   # HTTP path to match
+        method: GET                           # HTTP method (GET, POST, PUT, DELETE, etc.)
+        type: exact                           # Match type: "exact", "prefix", or "regex"
+      - path: /api/v1/products/
+        method: POST
+        type: prefix                          # Matches /api/v1/products/* paths
+      - path: ^/api/v1/items/[0-9]+$
+        type: regex                           # Regex pattern for dynamic paths
+        method: GET
+    # Note: HTTPRoutes are passive in Linkerd - they add observability metrics without affecting routing
+
   resources:                                  # Resource requests and limits for the Deployment
     requests:                                 # Resources for initialize the app Object
       memory: "512Mi"                         # Memory
