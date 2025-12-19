@@ -1,0 +1,101 @@
+{{- if and .Values.route53 .Values.route53.records }}
+{{- range .Values.route53.records }}
+---
+# Route53 Record (Upbound Provider)
+apiVersion: route53.aws.upbound.io/v1beta1
+kind: Record
+metadata:
+  name: {{ .name }}
+  labels:
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/managed-by: crossplane
+    environment: {{ $.Values.global.environment }}
+spec:
+  deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
+  forProvider:
+    {{- if .zoneId }}
+    zoneId: {{ .zoneId }}
+    {{- else if .zoneIdRef }}
+    zoneIdRef:
+      name: {{ .zoneIdRef }}
+    {{- else if .zoneIdSelector }}
+    zoneIdSelector:
+      matchLabels:
+        {{- range $key, $value := .zoneIdSelector }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+    {{- else }}
+    {{- fail "route53.records requires either zoneId, zoneIdRef, or zoneIdSelector" }}
+    {{- end }}
+
+    name: {{ .recordName | quote }}
+    type: {{ .type | upper }}
+
+    {{- if .ttl }}
+    ttl: {{ .ttl }}
+    {{- end }}
+
+    {{- if .records }}
+    records:
+    {{- range .records }}
+      - {{ . | quote }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .alias }}
+    alias:
+      - name: {{ .alias.name | quote }}
+        zoneId: {{ .alias.zoneId | quote }}
+        evaluateTargetHealth: {{ .alias.evaluateTargetHealth | default false }}
+    {{- end }}
+
+    {{- if .healthCheckId }}
+    healthCheckId: {{ .healthCheckId }}
+    {{- end }}
+
+    {{- if .setIdentifier }}
+    setIdentifier: {{ .setIdentifier | quote }}
+    {{- end }}
+
+    {{- if .weight }}
+    weightedRoutingPolicy:
+      - weight: {{ .weight }}
+    {{- end }}
+
+    {{- if .latencyRoutingPolicy }}
+    latencyRoutingPolicy:
+      - region: {{ .latencyRoutingPolicy.region }}
+    {{- end }}
+
+    {{- if .geolocationRoutingPolicy }}
+    geolocationRoutingPolicy:
+      - {{- if .geolocationRoutingPolicy.continent }}
+        continent: {{ .geolocationRoutingPolicy.continent | quote }}
+        {{- end }}
+        {{- if .geolocationRoutingPolicy.country }}
+        country: {{ .geolocationRoutingPolicy.country | quote }}
+        {{- end }}
+        {{- if .geolocationRoutingPolicy.subdivision }}
+        subdivision: {{ .geolocationRoutingPolicy.subdivision | quote }}
+        {{- end }}
+    {{- end }}
+
+    {{- if .failoverRoutingPolicy }}
+    failoverRoutingPolicy:
+      - type: {{ .failoverRoutingPolicy.type | upper }}
+    {{- end }}
+
+    {{- if .multiValueAnswerRoutingPolicy }}
+    multiValueAnswerRoutingPolicy: {{ .multiValueAnswerRoutingPolicy }}
+    {{- end }}
+
+    {{- if .allowOverwrite }}
+    allowOverwrite: {{ .allowOverwrite }}
+    {{- end }}
+
+  providerConfigRef:
+    name: {{ $.Values.global.providerConfig }}
+
+{{- end }}
+{{- end }}

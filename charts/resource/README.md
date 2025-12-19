@@ -1,6 +1,6 @@
 # Resource Chart
 
-Helm chart for managing AWS resources via Crossplane. This chart provisions and manages S3 buckets, RDS databases, SQS queues, and IAM roles for Kubernetes service accounts.
+Helm chart for managing AWS resources via Crossplane. This chart provisions and manages S3 buckets, RDS databases, SQS queues, IAM roles, and Route53 DNS records for Kubernetes workloads.
 
 ## Overview
 
@@ -9,6 +9,7 @@ The resource chart uses Crossplane to provision AWS infrastructure declaratively
 Key features:
 - Automatic secret management for RDS credentials
 - IAM policy creation and IRSA integration
+- Route53 DNS record management
 - Environment-specific defaults (QA/Prod)
 - Cross-account secret synchronization
 
@@ -62,6 +63,13 @@ This creates:
 - Secrets in AWS Secrets Manager for your application
 
 ## Resource Types
+
+The chart supports the following AWS resource types:
+- **S3 Buckets** - Object storage with encryption, versioning, lifecycle rules
+- **RDS Aurora Clusters** - PostgreSQL and MySQL databases with auto-scaling
+- **SQS Queues** - Message queues with dead letter queue support
+- **IAM Roles** - IRSA roles for Kubernetes service accounts
+- **Route53 DNS Records** - DNS management with routing policies
 
 ### S3 Buckets
 
@@ -188,6 +196,107 @@ This creates an IAM role with OIDC trust policy for the specified service accoun
 **Attaching Custom Policies:**
 
 When you create S3 buckets or SQS queues with `createPolicy: true` and `attachToRoles`, the chart automatically creates and attaches IAM policies for those resources.
+
+### Route53 DNS Records
+
+Create DNS records in Route53 hosted zones:
+
+```yaml
+route53:
+  records:
+    - name: api-dns-record
+      recordName: api.example.com
+      type: A
+      ttl: 300
+      zoneId: Z1234567890ABC
+      records:
+        - "192.0.2.1"
+```
+
+**Record Types Supported:** A, AAAA, CNAME, MX, TXT, NS, SRV, PTR, CAA, and more.
+
+**Zone Reference Methods:**
+
+You can specify the hosted zone in three ways:
+
+1. **Direct Zone ID:**
+   ```yaml
+   zoneId: Z1234567890ABC
+   ```
+
+2. **Reference to Crossplane HostedZone:**
+   ```yaml
+   zoneIdRef: my-hosted-zone
+   ```
+
+3. **Selector by labels:**
+   ```yaml
+   zoneIdSelector:
+     app.kubernetes.io/name: my-zone
+   ```
+
+**Common Record Examples:**
+
+CNAME Record:
+```yaml
+- name: www-cname
+  recordName: www.example.com
+  type: CNAME
+  ttl: 300
+  zoneId: Z1234567890ABC
+  records:
+    - "example.com"
+```
+
+MX Record:
+```yaml
+- name: mail-mx
+  recordName: example.com
+  type: MX
+  ttl: 300
+  zoneId: Z1234567890ABC
+  records:
+    - "10 mail1.example.com"
+    - "20 mail2.example.com"
+```
+
+TXT Record:
+```yaml
+- name: spf-txt
+  recordName: example.com
+  type: TXT
+  ttl: 300
+  zoneId: Z1234567890ABC
+  records:
+    - '"v=spf1 include:_spf.example.com ~all"'
+```
+
+**Alias Records:**
+
+For AWS resources like ALB, CloudFront, or S3:
+
+```yaml
+- name: alb-alias
+  recordName: app.example.com
+  type: A
+  zoneId: Z1234567890ABC
+  alias:
+    name: my-alb-123456.us-east-2.elb.amazonaws.com
+    zoneId: Z3AADJGX6KTTL2  # ELB zone ID (region-specific)
+    evaluateTargetHealth: true
+```
+
+**Advanced Routing Policies:**
+
+The chart supports all Route53 routing policies:
+
+- **Weighted Routing** - Distribute traffic across multiple resources
+- **Latency-based Routing** - Route to lowest latency endpoint
+- **Geolocation Routing** - Route based on user location
+- **Failover Routing** - Active-passive failover
+- **Multi-value Answer** - Return multiple IP addresses
+
+See [values.yaml](values.yaml) for complete examples of each routing policy.
 
 ## Global Configuration
 
