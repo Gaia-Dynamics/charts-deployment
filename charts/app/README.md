@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.16.0
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.16.1
 
 ## Values Overview
 
