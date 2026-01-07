@@ -4,7 +4,7 @@ This documentation provides an overview of how to configure the `values.yaml` fi
 
 Below are all the configurable values for the chart templates.
 
-[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.11.0
+[**Current Version:**](https://github.com/Gaia-Dynamics/charts-deployment/releases/latest) v1.16.0
 
 ## Values Overview
 
@@ -51,10 +51,23 @@ app:
       DATABASE_URL: "db-url"                  # Env var Key <-> Value
       SECRET_KEY: "secret-key"                # Env var Key <-> Value
     secrets:                                  # Array of AWS Secrets Manager keys (Optional)
+      # Option 1: Simple string format (imports all keys from secret)
       - "[ENV]/[APP_NAME]"                    # Primary secret (e.g., "qa/platform-api")
       - "[ENV]/rds/[DB_NAME]"                 # Additional secret (e.g., "qa/rds/platform-db")
+
+      # Option 2: Map format with selective key mapping (for renaming env vars)
+      # Use this when you need to connect to multiple databases with conflicting key names
+      - source: "[ENV]/rds/[DB_NAME]"         # Source secret in AWS Secrets Manager
+        keys:                                 # Array of key mappings (Optional)
+          - remoteKey: POSTGRES_HOST          # Key name in the secret
+            name: PLATFORM_DB_HOST            # Rename to this env var name in the pod
+          - remoteKey: POSTGRES_PASSWORD      # Another key to import
+            name: PLATFORM_DB_PASSWORD        # Renamed env var
+
       # Each secret creates a separate ExternalSecret resource
-      # All secrets are merged into the pod's environment variables
+      # String format: All keys are imported with their original names
+      # Map format with keys: Only specified keys are imported with custom names
+      # Map format without keys: All keys are imported (same as string format)
 
   # ConfigMaps (for file-based configuration)
   configMaps:                                 # ConfigMaps Array of objects (Optional)
@@ -216,4 +229,87 @@ app:
     # Provides automatic mTLS, observability metrics, and traffic management
     # Metrics available: request rates, latencies, success rates, and more
     # Use skipInboundPorts for apps with non-standard HTTP (e.g., Next.js with 304 responses)
+```
+
+## Common Use Cases
+
+### Multiple Database Connections
+
+When your application needs to connect to multiple databases (e.g., a primary database and a separate database for another service), you'll encounter conflicting environment variable names like `POSTGRES_HOST`, `POSTGRES_PASSWORD`, etc.
+
+**Solution:** Use the selective key mapping format to rename environment variables and avoid conflicts.
+
+**Example:** Platform API connecting to both `platform-api` and `dataops` databases:
+
+```yaml
+app:
+  name: platform-api
+  environment: qa
+
+  env:
+    public:
+      APP_NAME: platform-api
+      LOG_LEVEL: info
+
+    secrets:
+      # Application-specific secrets (import all keys with original names)
+      - qa/platform-api
+
+      # Platform API primary database (rename keys to avoid conflicts)
+      - source: qa/rds/db-platform-api-qa
+        keys:
+          - remoteKey: POSTGRES_HOST
+            name: PLATFORM_DB_HOST
+          - remoteKey: POSTGRES_PORT
+            name: PLATFORM_DB_PORT
+          - remoteKey: POSTGRES_USER
+            name: PLATFORM_DB_USER
+          - remoteKey: POSTGRES_PASSWORD
+            name: PLATFORM_DB_PASSWORD
+          - remoteKey: POSTGRES_DB
+            name: PLATFORM_DB_NAME
+
+      # Dataops/Prefect database (rename keys with different prefix)
+      - source: qa/rds/db-qa-prefect
+        keys:
+          - remoteKey: POSTGRES_HOST
+            name: PREFECT_DB_HOST
+          - remoteKey: POSTGRES_PORT
+            name: PREFECT_DB_PORT
+          - remoteKey: POSTGRES_USER
+            name: PREFECT_DB_USER
+          - remoteKey: POSTGRES_PASSWORD
+            name: PREFECT_DB_PASSWORD
+          - remoteKey: POSTGRES_DB
+            name: PREFECT_DB_NAME
+          - remoteKey: PREFECT_API_DATABASE_CONNECTION_URL
+            name: PREFECT_API_DATABASE_CONNECTION_URL
+```
+
+**Result:** Your application will have access to:
+- All keys from `qa/platform-api` (e.g., `API_KEY`, `JWT_SECRET`, etc.)
+- `PLATFORM_DB_HOST`, `PLATFORM_DB_PASSWORD`, etc. for the platform-api database
+- `PREFECT_DB_HOST`, `PREFECT_DB_PASSWORD`, etc. for the prefect database
+- No environment variable conflicts!
+
+### Mixed Secret Import Strategies
+
+You can mix both simple and selective import strategies:
+
+```yaml
+env:
+  secrets:
+    # Import all keys from application secrets
+    - qa/my-app
+
+    # Import only specific AWS credentials
+    - source: qa/aws-credentials
+      keys:
+        - remoteKey: AWS_ACCESS_KEY_ID
+          name: S3_ACCESS_KEY
+        - remoteKey: AWS_SECRET_ACCESS_KEY
+          name: S3_SECRET_KEY
+
+    # Import all keys from another service's secret
+    - qa/third-party-api-keys
 ```
