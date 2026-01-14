@@ -13,7 +13,7 @@ spec:
   {{- end }}
   schedule: {{ $.Values.schedule | squote }}
   startingDeadlineSeconds: 30
-  successfulJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
   jobTemplate:
