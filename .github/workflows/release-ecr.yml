@@ -1,0 +1,64 @@
+name: Release Charts to ECR
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REGISTRY: 050608055454.dkr.ecr.us-east-2.amazonaws.com
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::050608055454:role/GitHub_Actions_Role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Package and Push Charts
+        run: |
+          for chart_dir in charts/*/; do
+            chart_name=$(basename "$chart_dir")
+            chart_version=$(grep '^version:' "$chart_dir/Chart.yaml" | awk '{print $2}' | tr -d '"')
+
+            echo "Processing chart: $chart_name version: $chart_version"
+
+            # Check if this version already exists in ECR
+            if aws ecr describe-images \
+                --repository-name "helm-charts/$chart_name" \
+                --image-ids imageTag="$chart_version" \
+                --region $AWS_REGION 2>/dev/null; then
+              echo "Chart $chart_name:$chart_version already exists, skipping..."
+              continue
+            fi
+
+            # Package the chart
+            helm package "$chart_dir" --destination .
+
+            # Push to ECR
+            helm push "${chart_name}-${chart_version}.tgz" \
+              oci://${{ env.ECR_REGISTRY }}/helm-charts
+
+            echo "Successfully pushed $chart_name:$chart_version"
+          done
