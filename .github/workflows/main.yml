@@ -1,9 +1,10 @@
-name: Release Charts
+# DEPRECATED: GitHub Pages workflow - replaced by ECR (release-ecr.yml)
+# Keeping for reference and rollback if needed
+
+name: Release Charts (GitHub Pages) - DISABLED
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:  # Manual trigger only, disabled from automatic runs
 
 jobs:
   release:
