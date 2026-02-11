@@ -11,6 +11,8 @@ metadata:
     app.kubernetes.io/name: {{ .name }}
     app.kubernetes.io/managed-by: crossplane
     environment: {{ $.Values.global.environment }}
+  annotations:
+    crossplane.io/external-name: https://sqs.{{ $.Values.global.region }}.amazonaws.com/{{ $.Values.global.accountId }}/{{ .name }}
 spec:
   deletionPolicy: {{ .deletionPolicy | default $.Values.global.deletionPolicy }}
   forProvider:
