@@ -9,6 +9,9 @@ metadata:
     {{- if .deletionPolicy }}
     argocd.argoproj.io/hook-delete-policy: {{ .deletionPolicy | default "HookSucceeded" }}
     {{- end }}
+    {{- if .syncWave }}
+    argocd.argoproj.io/sync-wave: {{ .syncWave | quote }}
+    {{- end }}
 spec:
   ttlSecondsAfterFinished: 600
   template:
