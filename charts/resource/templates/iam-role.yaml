@@ -40,7 +40,20 @@ spec:
                 "oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}:aud": "sts.amazonaws.com"
               }
             }
-          }
+          }{{- range .additionalServiceAccounts }},
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Federated": "arn:aws:iam::{{ $.Values.global.accountId }}:oidc-provider/oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+              "StringLike": {
+                "oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}:sub": "system:serviceaccount:{{ .namespace }}:{{ .serviceAccountName }}",
+                "oidc.eks.{{ $.Values.global.region }}.amazonaws.com/id/{{ $.Values.global.oidcProviderId }}:aud": "sts.amazonaws.com"
+              }
+            }
+          }{{- end }}
         ]
       }
 
